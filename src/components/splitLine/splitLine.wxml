@@ -1,0 +1,3 @@
+<view class="split-line">
+    <view class="line" style="{{itemData.nowSty}}"></view>
+</view>

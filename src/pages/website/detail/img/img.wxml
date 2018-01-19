@@ -1,0 +1,3 @@
+<view class="img-wrapper">
+  <image src="{{itemData.url}}" mode="aspectFill" class="img"></image>
+</view>

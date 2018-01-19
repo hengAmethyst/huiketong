@@ -1,0 +1,3 @@
+<view class="picture" style="{{layout}}">
+    <image src="{{itemData.data.path}}" mode="widthFix" />
+</view>

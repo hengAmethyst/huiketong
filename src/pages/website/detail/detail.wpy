@@ -1,0 +1,904 @@
+<template>
+  <view>
+    <scroll-view class="detail" @scroll="scroll" scroll-y style="{{'height:'+windowHeight+'px'}}">
+      <!-- 轮播 -->
+      <swiper class="swiper-container" style="{{'height:'+windowHeight+'px'}}" autoplay="{{autoplay}}" interval="{{interval}}" duration="{{duration}}" @change="handleChangeIdx">
+        <repeat for="{{bannerPicList}}" key="index" index="index" item="item">
+          <swiper-item class="swiper-box">
+            <image src="{{item.url}}" class="slide-image" style="{{'height:'+windowHeight+'px'}}" />
+          </swiper-item>
+        </repeat>
+      </swiper>
+      <view class="mask">
+        <view class="title-wrapper">
+          <view class="title">{{company?company.companyName : '公司名称'}}</view>
+          <view class="logo-wrapper">
+            <image src="{{company?company.logo : ''}}" class="logo" />
+          </view>
+        </view>
+        <view class="line">
+          <repeat for="{{bannerPicList.length}}" key="index" index="index" item="item">
+            <view class="line-item {{currentIdx === index ? 'active' : ''}}"></view>
+          </repeat>
+        </view>
+        <view class="company-info">
+          <view class="address" @tap="toLocation({{company.address}})">{{company?company.address : '公司地址'}}</view>
+          <view class="icon-wrapper right-border" @tap="toLocation({{company.address}})">
+            <image class="icon" src="../../../img/icon_location.png" />
+          </view>
+          <view class="icon-wrapper" @tap="toCall({{company.mobile}})">
+            <image class="icon" src="../../../img/icon_phone.png" />
+          </view>
+        </view>
+        <!-- <view class="address">
+          <image class="icon" src="../../../img/icon_location.png" />{{company?company.address : '公司地址'}}</view>
+        <view class="phone">
+          <image class="icon" src="../../../img/icon_phone.png" />{{company?company.mobile : '联系方式'}}</view> -->
+      </view>
+      <!-- 详情内容 -->
+      <view class="content">
+        <repeat for="{{contentList}}" key="index">
+          <view class="img-wrapper">
+            <image src="{{item.url}}" mode="aspectFill" class="img"></image>
+          </view>
+          <view class="img-arr-wrapper">
+            <repeat for="{{item.list}}" key="index">
+              <image class="img-item" src="{{item.url}}" mode="aspectFill" />
+            </repeat>
+          </view>
+          <view class="text-wrapper">
+            <view class="text-title">{{item.title}}</view>
+            <view class="text-desc">{{item.content}}</view>
+          </view>
+        </repeat>
+      </view>
+
+      <view class="foot-space"></view>
+    </scroll-view>
+    <!-- 底部按钮 -->
+    <view class="foot-btn {{scrollTop > 65 ? 'white' : '' }}" wx:if="{{ifShare}}">
+      <button class="share-btn" open-type="share">
+        <image class="icon" src="{{scrollTop > 65 ? '../../../img/icon_share_black.png' : '../../../img/icon_share.png'}}" />分享</button>
+      <view class="message" @tap.stop="toMessage">留言</view>
+    </view>
+    <view class="foot-btn {{scrollTop > 65 ? 'white' : '' }}" wx:else>
+      <view class="share" @tap.stop="showActionSheet">
+        <image class="icon" src="{{scrollTop > 65 ? '../../../img/icon_share_black.png' : '../../../img/icon_share.png'}}" />分享</view>
+      <view class="edit" @tap="toEdit">编辑</view>
+    </view>
+
+    <!-- 显示actionSheet-->
+    <view class="share-action-sheet {{showShare ? 'active' : '' }}">
+      <button class="share-btn btn share" open-type="share">分享给微信好友</button>
+      <view class="share-btn btn" @tap="toQrCode">生成小程序码</view>
+      <view class="cancel-btn btn" @tap="toCancel">取消</view>
+    </view>
+
+    <!-- 显示留言框 -->
+    <view class="message-wrapper" wx:if="{{showMessage}}">
+      <view class="message-box">
+        <view class="close-icon" @tap.stop="handleClose"></view>
+        <view class="message-title">给我们留言</view>
+        <view class="message-text">请留下联系方式，以便我们及时联系您</view>
+        <form bindsubmit="formSubmit" report-submit>
+          <input class="form-input" name="name" type="text" placeholder="请输入姓名" />
+          <input class="form-input" name="mobile" type="number" maxlength="11" placeholder="请输入手机号" />
+          <textarea class="form-textarea" name="message" type="text" placeholder="请输入留言内容" />
+          <button class="submit" formType="submit">提交</button>
+        </form>
+      </view>
+    </view>
+  </view>
+</template>
+
+<script>
+import wepy from "wepy";
+import ApiUrl from "../../../api-url";
+import * as Tool from "../../../tool";
+import QQMapWX from "../../../qqmap-wx-jssdk.min.js";
+
+export default class Detail extends wepy.page {
+  config = {};
+
+  data = {
+    company: null,
+    // storeLogo: "",
+    indicatorDots: true,
+    autoplay: true,
+    interval: 5000,
+    duration: 800,
+    windowHeight: 0,
+    currentIdx: 0,
+    // 企业简介列表
+    bannerPicList: [],
+
+    // 内容列表
+    contentList: [],
+    templateDetailList: [],
+    contentPicList: [],
+    // actionSheet
+    showShare: false,
+    scrollTop: 0,
+    ifShare: false,
+    // 查询当前页面所需要的id
+    id: null,
+    token: "",
+    // 留言相关
+    showMessage: false
+  };
+
+  computed = {
+    changeDetail() {
+      return this.$parent.globalData.changeDetail;
+    }
+  };
+
+  watch = {
+    changeDetail(newValue, oldValue) {
+      this.fetchData(this.$parent.globalData.nowToken, this.id).then(() => {
+        this.$parent.globalData.changeDetail = false;
+      });
+    }
+  };
+
+  /**
+     * 查询数据
+     */
+  fetchData(token, id) {
+    let param = {
+      companyId: id
+    };
+    return wepy
+      .request({
+        url: ApiUrl.template.query,
+        data: Tool.genReqBody(param, token),
+        method: "POST"
+      })
+      .then(
+        res => {
+          console.log("数据展示,", res);
+          let response = res.data;
+          if (response.code === 0) {
+            this.company = response.data;
+            if (response.data.webTemplate) {
+              this.templateDetailList = response.data.webTemplate
+                .templateDetailList
+                ? response.data.webTemplate.templateDetailList
+                : [];
+              // 初始化 简介数据
+              // if (this.templateDetailList.length === 0) {
+              //   this.templateDetailList.push({ title: "简介", content: "简介内容" });
+              // }
+              // 初始化图片数据
+              let picList = response.data.webTemplate.templatePicList
+                ? response.data.webTemplate.templatePicList
+                : [];
+              let banners = picList.filter(it => it.isTurnView === 0);
+              this.bannerPicList =
+                banners && banners.length > 0
+                  ? banners
+                  : [
+                      {
+                        url: "../../../img/default_banner.jpg"
+                      }
+                    ];
+              // 初始化banner图
+              // if (this.bannerPicList.length === 0) {
+              //   this.bannerPicList = [
+              //     {
+              //       url: "../../../img/default_banner.jpg"
+              //     }
+              //   ];
+              // }
+              this.contentPicList = picList.filter(it => it.isTurnView === 1);
+            } else {
+              this.templateDetailList = [];
+              this.contentPicList = [];
+            }
+            this.$apply();
+          } else {
+            wx.showToast({
+              title: "请求数据失败",
+              image: "../../../img/error.png",
+              duration: 2000
+            });
+          }
+        },
+        err => {
+          console.log(err);
+        }
+      );
+  }
+
+  /**
+   * 获取小程序码
+   */
+  fetchQrCode() {
+    let param = {
+      companyId: this.id,
+      userId: this.$parent.globalData.userId,
+      appId: 5,
+      sceneStr: this.id,
+      pagePath: "pages/website/detail/detail"
+    };
+    return wepy
+      .request({
+        url: ApiUrl.access.qrCode,
+        data: Tool.genReqBody(param, this.token),
+        method: "POST"
+      })
+      .then(
+        res => {
+          console.log(res);
+          let response = res.data;
+          if (response.code === 0) {
+            return response.data.miniQrUrl;
+          } else {
+            wx.showToast({
+              title: response.showMsg,
+              image: "../../../img/error.png",
+              duration: 2000
+            });
+          }
+        },
+        err => {
+          wx.showToast({
+            title: "请求数据失败",
+            image: "../../../img/error.png",
+            duration: 2000
+          });
+        }
+      );
+  }
+
+  methods = {
+    /**
+    * 获取当前轮播图的index
+     */
+    handleChangeIdx(e) {
+      this.currentIdx = e.detail.current;
+    },
+    /**
+    * 获取滚动位置
+     */
+    scroll(e) {
+      this.scrollTop = e.detail.scrollTop;
+    },
+    /**
+     * 编辑
+     */
+    toEdit() {
+      wepy.navigateTo({
+        url: "/pages/website/edit/edit"
+      });
+    },
+    /**
+    * 显示actionSheet
+     */
+    showActionSheet() {
+      this.showShare = true;
+    },
+    /**
+     * 关闭actionSheet
+      */
+    toCancel() {
+      this.showShare = false;
+    },
+    /**
+    * 生成小程序码
+     */
+    toQrCode() {
+      this.fetchQrCode().then(data => {
+        wepy.previewImage({
+          urls: [data] // 需要预览的图片http链接列表
+        });
+      });
+    },
+    /**
+    * 留言
+     */
+    toMessage() {
+      this.showMessage = true;
+      this.$apply();
+    },
+    /**
+    *关闭留言框
+     */
+    handleClose() {
+      this.showMessage = false;
+      this.$apply();
+    },
+    /**
+  * form表单提交
+   */
+    formSubmit(e) {
+      console.log(e);
+      let param = {
+        name: e.detail.value.name,
+        phone: e.detail.value.mobile,
+        leaveWord: e.detail.value.message,
+        companyId: this.id,
+        form_id: e.detail.formId
+      };
+      return wepy
+        .request({
+          url: ApiUrl.template.leaveWord,
+          data: Tool.genReqBody(param, this.token),
+          method: "POST"
+        })
+        .then(
+          res => {
+            let response = res.data;
+            console.log(response);
+            if (response.code === 0) {
+              this.statisticalData(3);
+              wx.showToast({
+                title: "添加成功",
+                duration: 2000
+              });
+              Tool.sleep(500).then(() => {
+                this.showMessage = false;
+                this.$apply();
+              });
+            } else {
+              wx.showToast({
+                // title: response.showMsg,
+                title: "添加失败",
+                image: "../../../img/error.png",
+                duration: 2000
+              });
+            }
+          },
+          err => {
+            wx.showToast({
+              title: "请求数据失败",
+              image: "../../../img/error.png",
+              duration: 2000
+            });
+          }
+        );
+    },
+    /**
+     * 地图位置
+     */
+    toLocation(value) {
+      var location = new QQMapWX({
+        key: "G4OBZ-YKFCX-EX34L-7VPMR-TPS7F-T5FHY" // 必填
+      });
+      location.geocoder({
+        address: value,
+        success: res => {
+          console.log(res);
+          wx.openLocation({
+            latitude: res.result.location.lat,
+            longitude: res.result.location.lng,
+            name: value,
+            scale: 28
+          });
+        },
+        fail: res => {
+          wepy.showToast({
+            title: "地址获取失败",
+            duration: 1000,
+            image: "../../../img/error.png"
+          });
+        }
+      });
+    },
+    /**
+     * 拨打电话
+     */
+    toCall(value) {
+      wepy.makePhoneCall({
+        phoneNumber: value
+      });
+    },
+    /**
+    * 转发事件
+     */
+    onShareAppMessage(res) {
+      if (res.from === "button") {
+        // 来自页面内转发按钮
+        console.log(res.target);
+      }
+      return {
+        title: "新乐汇汇客通",
+        path: `/pages/website/detail/detail?id=${this.id}`,
+        success: res => {
+          // 关闭actionSheet
+          this.showShare = false;
+          this.statisticalData(1); // 记录数据
+        },
+        fail: res => {
+          // 转发失败
+        }
+      };
+    }
+  };
+
+  /**
+   * 统计数据
+   */
+  statisticalData(type) {
+    let param = {
+      companyId: this.id,
+      type: type,
+      searchDate: new Date()
+    };
+    return wepy
+      .request({
+        url: ApiUrl.count,
+        data: Tool.genReqBody(param, this.token),
+        method: "POST"
+      })
+      .then(
+        res => {
+          console.log(res);
+        },
+        err => {
+          console.log(err);
+        }
+      );
+  }
+
+  onLoad(options) {
+    wepy.showLoading({
+      title: "加载中"
+    });
+    console.log(options);
+    let app = this.$parent;
+    /**
+    * 获取窗口可用高度
+     */
+    wepy
+      .getSystemInfo()
+      .then(res => {
+        this.windowHeight = res.windowHeight;
+      })
+      .then(() => {
+        this.token = app.globalData.nowToken;
+        if (options.id) {
+          this.id = options.id;
+          this.ifShare = true;
+          this.statisticalData(2); // 记录数据
+        } else if (options.scene) {
+          this.id = decodeURIComponent(options.scene);
+          this.ifShare = true;
+          this.statisticalData(2); // 记录数据
+        } else {
+          this.id = app.globalData.companyId;
+          this.ifShare = false;
+        }
+        this.$apply();
+        return this.fetchData(app.globalData.nowToken, this.id).then(() => {
+          wx.setNavigationBarTitle({
+            title: this.company ? this.company.companyName : "新乐汇汇客通"
+          });
+          wepy.hideLoading();
+        });
+      });
+  }
+}
+</script>
+
+<style lang="scss" scoped>
+.swiper-container {
+  position: relative;
+  z-index: 1;
+  .swiper-box {
+    position: relative;
+    z-index: 1;
+    .slide-image {
+      width: 750rpx;
+    }
+  }
+}
+.mask {
+  box-sizing: border-box;
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  z-index: 10;
+  padding: 79rpx 40rpx 0;
+  width: 750rpx;
+  height: 496rpx;
+  background-image: linear-gradient(to bottom, rgba(0, 0, 0, 0), #111111);
+  .title-wrapper {
+    margin-bottom: 20rpx;
+    display: flex;
+    width: 670rpx;
+    height: 100rpx;
+    .title {
+      flex: 1;
+      line-height: 100rpx;
+      font-size: 40rpx;
+      font-weight: 600;
+      color: #fff;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .logo-wrapper {
+      width: 100rpx;
+      height: 100rpx;
+      .logo {
+        width: 100rpx;
+        height: 100rpx;
+        border-radius: 100%;
+      }
+    }
+  }
+  .line {
+    margin-bottom: 50rpx;
+    display: flex;
+    flex-direction: row;
+    width: 670rpx;
+    height: 4rpx;
+    .line-item {
+      margin-right: 5rpx;
+      opacity: 0.3;
+      flex: 1;
+      height: 4rpx;
+      background-color: #fff;
+      &:last-child {
+        margin-right: 0;
+      }
+      &.active {
+        opacity: 1;
+      }
+    }
+  }
+  .company-info {
+    display: flex;
+    height: 60rpx;
+    line-height: 60rpx;
+    width: 670rpx;
+    margin: 0 auto;
+    .address {
+      flex: 1;
+      line-height: 60rpx;
+      font-size: 30rpx;
+      color: #d0cfd0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .icon-wrapper {
+      position: relative;
+      z-index: 1;
+      padding: 10rpx 50rpx;
+      border-right: 1px solid #555;
+      &:nth-child(2n-1) {
+        border-right: none;
+      }
+      .icon {
+        width: 40rpx;
+        height: 40rpx;
+      }
+    }
+  }
+  // .address {
+  //   margin-bottom: 13rpx;
+  //   width: 670rpx;
+  //   height: 40rpx;
+  //   line-height: 40rpx;
+  //   color: #d0cfd0;
+  //   font-size: 28rpx;
+  //   overflow: hidden;
+  //   text-overflow: ellipsis;
+  //   white-space: nowrap;
+  //   .icon {
+  //     vertical-align: top;
+  //     margin-right: 28rpx;
+  //     margin-top: 4rpx;
+  //     width: 32rpx;
+  //     height: 32rpx;
+  //   }
+  // }
+  // .phone {
+  //   width: 670rpx;
+  //   height: 40rpx;
+  //   line-height: 40rpx;
+  //   color: #d0cfd0;
+  //   font-size: 28rpx;
+  //   overflow: hidden;
+  //   text-overflow: ellipsis;
+  //   white-space: nowrap;
+  //   .icon {
+  //     vertical-align: top;
+  //     margin-right: 28rpx;
+  //     margin-top: 4rpx;
+  //     width: 32rpx;
+  //     height: 32rpx;
+  //   }
+  // }
+}
+
+.content {
+  padding: 60rpx 30rpx 0;
+  .img-wrapper {
+    margin-bottom: 30rpx;
+    width: 690rpx;
+    .img {
+      display: block;
+      width: 690rpx;
+      height: 300rpx;
+    }
+  }
+  .img-arr-wrapper {
+    .img-item {
+      margin-right: 24rpx;
+      margin-bottom: 24rpx;
+      width: 214rpx;
+      height: 214rpx;
+      &:nth-child(3n) {
+        margin-right: 0;
+      }
+    }
+  }
+  .text-wrappe {
+    margin-bottom: 30rpx;
+    width: 690rpx;
+    padding-bottom: 30rpx;
+    border-bottom: 1rpx solid #ccc;
+    .text-title {
+      margin-bottom: 25rpx;
+      font-size: 36rpx;
+      line-height: 50rpx;
+      color: #222;
+      font-weight: 600;
+    }
+    .text-desc {
+      line-height: 40rpx;
+      font-size: 26rpx;
+      color: #63666b;
+    }
+  }
+}
+
+.foot-space {
+  width: 750rpx;
+  height: 130rpx;
+}
+
+.foot-btn {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  box-sizing: border-box;
+  padding: 20rpx 40rpx;
+  display: flex;
+  flex-direction: row;
+  width: 750rpx;
+  height: 130rpx;
+  background-color: #111;
+  border-top: 1rpx solid #3d3d3d;
+  z-index: 20;
+  transition: all 0.5s ease;
+  .share {
+    flex: 1;
+    width: 332px;
+    height: 90rpx;
+    text-align: center;
+    line-height: 90rpx;
+    color: #fff;
+    font-size: 38rpx;
+    background-color: transparent;
+    transition: all 0.5s ease;
+    .icon {
+      margin-right: 17rpx;
+      width: 32rpx;
+      height: 32rpx;
+      transition: all 0.5s ease;
+    }
+  }
+  .edit {
+    flex: 1;
+    width: 332rpx;
+    height: 90rpx;
+    text-align: center;
+    line-height: 90rpx;
+    color: #000;
+    font-size: 38rpx;
+    border-radius: 8rpx;
+    background-color: #fff;
+    transition: all 0.5s ease;
+  }
+  .share-btn {
+    flex: 1;
+    color: #fff;
+    background-color: transparent;
+    transition: all 0.5s ease;
+    &::after {
+      border: none;
+    }
+    .icon {
+      margin-right: 17rpx;
+      width: 32rpx;
+      height: 32rpx;
+      transition: all 0.5s ease;
+    }
+  }
+  .message {
+    flex: 1;
+    width: 332rpx;
+    height: 90rpx;
+    text-align: center;
+    line-height: 90rpx;
+    color: #000;
+    font-size: 38rpx;
+    border-radius: 8rpx;
+    background-color: #fff;
+    transition: all 0.5s ease;
+  }
+  &.white {
+    transition: all 0.5s ease;
+    border-top: 1rpx solid #ccc;
+    background-color: #fff;
+    .share {
+      transition: all 0.5s ease;
+      color: #222;
+    }
+    .edit {
+      transition: all 0.5s ease;
+      color: #fff;
+      background-color: #4487f8;
+    }
+    .share-btn {
+      background-color: transparent;
+      color: #000;
+      &::after {
+        border: none;
+      }
+    }
+    .message {
+      color: #fff;
+      background-color: #4487f8;
+      transition: all 0.5s ease;
+    }
+  }
+}
+// TODO: actionSheet抽象成组件
+.share-action-sheet {
+  width: 750rpx;
+  position: fixed;
+  bottom: 0;
+  z-index: 30;
+  border: 1rpx solid #ccc;
+  transform: translateY(366rpx);
+  transition: all 0.3s ease;
+  &.active {
+    transform: translateY(0rpx);
+    transition: all 0.3s ease;
+  }
+  .btn {
+    height: 120rpx;
+    line-height: 120rpx;
+    background: #fff;
+    font-size: 36rpx;
+    text-align: center;
+    color: #222;
+    border-radius: 0;
+    &.share-btn {
+      border-bottom: 1rpx solid #ccc;
+    }
+    &.share::after {
+      border: none;
+    }
+  }
+}
+::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+  color: transparent;
+}
+.message-wrapper {
+  position: fixed;
+  z-index: 100;
+  width: 750rpx;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  .message-box {
+    box-sizing: border-box;
+    position: absolute;
+    padding: 50rpx 32rpx;
+    z-index: 110;
+    width: 630rpx;
+    height: 925rpx;
+    top: 77rpx;
+    left: 50%;
+    margin-left: -315rpx;
+    background-color: #fff;
+    border-radius: 10rpx;
+    transition: all 0.5s linear;
+    .close-icon {
+      position: absolute;
+      right: 30rpx;
+      top: 30rpx;
+      z-index: 1;
+      width: 50rpx;
+      height: 50rpx;
+      transform: rotate(45deg);
+      &::before {
+        content: "";
+        display: block;
+        position: absolute;
+        z-index: 10;
+        width: 50rpx;
+        height: 4rpx;
+        top: 23rpx;
+        left: 0;
+        background-color: #ccc;
+      }
+      &::after {
+        content: "";
+        display: block;
+        position: absolute;
+        z-index: 10;
+        width: 4rpx;
+        height: 50rpx;
+        top: 0;
+        left: 23rpx;
+        background-color: #ccc;
+      }
+    }
+    .message-title {
+      margin: 10rpx auto 21rpx;
+      height: 53rpx;
+      width: 100%;
+      text-align: center;
+      line-height: 53rpx;
+      font-weight: 600;
+      font-size: 38rpx;
+      color: #031722;
+    }
+    .message-text {
+      margin-bottom: 46rpx;
+      width: 100%;
+      height: 40rpx;
+      line-height: 40rpx;
+      text-align: center;
+      font-size: 28rpx;
+      color: #8b8f93;
+    }
+    .form-input {
+      margin-bottom: 14rpx;
+      box-sizing: border-box;
+      padding: 0 30rpx;
+      width: 566rpx;
+      height: 70rpx;
+      border-radius: 2rpx;
+      background-color: #fff;
+      border: 1rpx solid #e1e1e1;
+      font-size: 28rpx;
+      &:focus {
+        border-color: #488dff;
+      }
+    }
+    .form-textarea {
+      margin: 35rpx auto 46rpx;
+      padding: 30rpx;
+      box-sizing: border-box;
+      width: 566rpx;
+      height: 340rpx;
+      border-radius: 2rpx;
+      border: 1rpx solid #e1e1e1;
+      font-size: 28rpx;
+      &:focus {
+        border-color: #488dff;
+      }
+    }
+    .submit {
+      height: 80rpx;
+      background-color: #488dff;
+      color: #fff;
+      line-height: 80rpx;
+      &::after {
+        border: none;
+      }
+    }
+  }
+}
+</style>

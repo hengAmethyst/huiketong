@@ -1,0 +1,7 @@
+ <view class="img-list" style="{{listStyle}}">
+    <block wx:for="{{itemData.data}}" wx:key="index">
+      <view class="img-item" style="{{itemStyle}}">
+        <image class="image" src="{{item.path}}" mode="widthFix" />
+      </view>
+    </block>
+  </view>

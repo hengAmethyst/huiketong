@@ -1,0 +1,4 @@
+<view class="content-container" style="width:{{width}}">
+  <image src="{{itemData.preview.url}}" mode="aspectFill"/>
+  <view class="mask">{{itemData.preview.title}}</view>
+</view>

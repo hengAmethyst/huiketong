@@ -1,0 +1,186 @@
+<template>
+<scroll-view class="form-list" scroll-y bindscrolltolower="scrolltolower" enable-back-to-top>
+  <repeat for="{{list}}" key="index" index="index" item="item">
+    <navigator
+      class="item"
+      url="/pages/website/formDetail/formDetail?id={{item.id}}">
+      <view class="item-inner">
+        <view class="dot" hidden="{{item.isReading != 0}}"></view>
+        <view class="item-name">{{item.name}}</view>
+        <view class="date">{{item.createTime}}</view>
+        <view class="icon-right-arrow"></view>
+      </view>
+    </navigator>
+  </repeat>
+  <view class="loading">{{more ? '加载更多...' : '没有更多了'}}</view>
+</scroll-view>
+<toast />
+</template>
+
+<script>
+import wepy from "wepy";
+import ApiUrl from "@/api-url";
+import * as Tool from "@/tool";
+import Toast from "wepy-com-toast";
+
+const PAGE_SIZE = 10;
+
+export default class FormList extends wepy.page {
+  components = {
+    toast: Toast
+  };
+
+  config = {
+    navigationBarTitleText: '表单列表'
+  };
+
+  data = {
+    list: [],
+    currentPage: 0,
+    isFetchingData: false,
+    more: true
+  };
+
+  methods = {
+    scrolltolower() {
+      this.loadMore();
+    }
+  };
+
+  loadMore() {
+    if (this.isFetchingData || !this.more) {
+      return;
+    }
+    this.isFetchingData = true;
+    let page = this.currentPage + 1;
+    this.fetchData(page)
+      .then(data => {
+        if (data.length > 0) {
+          this.list = this.list.concat(data);
+          this.currentPage = page;
+        }
+        if (data.length < PAGE_SIZE) {
+          this.more = false;
+        }
+        this.isFetchingData = false;
+        this.$apply();
+      }, err => {
+        this.isFetchingData = false;
+        this.showToast({ title: err.message });
+      });
+  }
+
+  fetchData(page) {
+    let token = this.$parent.globalData.nowToken;
+    let param = {
+      page: {
+        pageSize: PAGE_SIZE,
+        currentPage: page,
+        currentResult: 0,
+        totalPage: 0,
+        totalResult: 0
+      },
+    }
+    let reqData = {
+      url: ApiUrl.userCenter.formList,
+      data: Tool.genReqBody(param, token),
+      method: 'POST'
+    };
+    return wepy.request(reqData)
+      .then(res => {
+        if (res.data.code === 0) {
+          res.data.data.forEach(it => {
+            it.createTime = Tool.formatDateTime(it.createTime, 'YYYY-MM-DD');
+          });
+          return res.data.data;
+        } else {
+          throw new Error(res.data.showMsg);
+        }
+      }, err => {
+        throw new Error('网络连接不上');
+      });
+    // console.log('page', page);
+    // const sleep = ts => new Promise(resolve => setTimeout(resolve, ts));
+    // if (page < 10) {
+    //   return sleep(1500).then(() => Array(15).fill({}));
+    // } else {
+    //   return sleep(1500).then(() => []);
+    // }
+  }
+
+  onLoad() {
+    this.loadMore();
+  }
+
+  showToast({ title }) {
+    this.$invoke("toast", "show", {
+      title
+    });
+  }
+}
+</script>
+
+<style lang="scss">
+.form-list {
+  height: 100%;
+  .item {
+    padding: 0 30rpx;
+    .item-inner {
+      position: relative;
+      height: 110rpx;
+      .dot,
+      .item-name,
+      .date,
+      .icon-right-arrow {
+        position: absolute;
+        top: 50%;
+        transform: translate(0, -50%);
+      }
+      .dot {
+        left: 0;
+        width: 14rpx;
+        height: 14rpx;
+        background-color: #4487f8;
+        border-radius: 50%;
+      }
+
+      .item-name {
+        left: 34rpx;
+        font-size: 32rpx;
+        font-weight: 500;
+        color: #222222;
+      }
+
+      .date {
+        right: 42rpx;
+        font-size: 26rpx;
+        color: #bcbcbc;
+      }
+
+      .icon-right-arrow {
+        right: 0;
+        display: inline-block;
+        width: 20rpx;
+        height: 20rpx;
+        &::before {
+          content: "";
+          display: block;
+          width: 20rpx;
+          height: 20rpx;
+          margin-left: -8rpx;
+          transform: rotate(-45deg);
+          border-right: 2rpx solid #d7d7d7;
+          border-bottom: 2rpx solid #d7d7d7;
+        }
+      }
+    }
+  }
+
+  .loading {
+    font-size: 26rpx;
+    color: #bcbcbc;
+    text-align: center;
+    height: 150rpx;
+  }
+}
+</style>

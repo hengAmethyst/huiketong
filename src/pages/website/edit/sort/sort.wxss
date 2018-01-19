@@ -1,0 +1,19 @@
+.right{
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width:250rpx;
+    height:107rpx;
+}
+.right .img-down{
+    width:34.9rpx;
+    height:34rpx;
+}
+.right .img-up{
+    width:34.9rpx;
+    height:34rpx;
+}
+.right .img-del{
+    width:36rpx;
+    height:40rpx;
+}

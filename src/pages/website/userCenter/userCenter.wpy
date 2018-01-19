@@ -1,0 +1,256 @@
+<template>
+  <view class="user-center">
+    <view class="header">
+      <view class="shop-info">
+        <view class="shop-name">{{info.companyName}}</view>
+        <view class="address">{{info.companyAddress}}</view>
+      </view>
+
+      <image class="logo" src="{{info.companyLogoUrl}}"></image>
+    </view>
+
+    <view class="list">
+      <navigator class="item" url="/pages/website/userInfo/userInfo">
+        <view class="item-inner">
+          <image class="icon" src="/img/icon_user_info.png"></image>
+          <view class="label">基本资料</view>
+          <view class="icon-right-arrow"></view>
+        </view>
+        <view class="bottom-line"></view>
+      </navigator>
+      <navigator class="item" url="/pages/website/formList/formList">
+        <view class="item-inner">
+          <image class="icon" src="/img/icon_form_list.png"></image>
+          <view class="label">表单</view>
+          <view class="icon-right-arrow"></view>
+        </view>
+      </navigator>
+      <view class="item update">
+        <view class="item-inner">
+          <image class="icon" src="/img/icon_upgrade.png"></image>
+          <view class="label hot">升级为高级展示版小程序
+            <image src="/img/icon_hot.png"></image>
+          </view>
+          <!-- <view class="icon-right-arrow"></view> -->
+        </view>
+      </view>
+    </view>
+    <view class="desc">
+      <view class="upgrade-desc">
+        <view>拥有独立的小程序名称和独立的入口</view>
+        <view>可在周围五公里内被微信用户搜索到</view>
+        <view>可售卖商品：支持微信支付，在线处理您的订单</view>
+        <view>更多酷炫组件和功能</view>
+        <view>一对一售后服务</view>
+      </view>
+
+      <button class="btn-contact-adviser" @tap="phoneCall">
+        <image src="/img/icon_phone_blue.png"></image>联系您的专属顾问</button>
+    </view>
+    <toast />
+  </view>
+</template>
+
+<script>
+import wepy from "wepy";
+import ApiUrl from "@/api-url";
+import * as Tool from "@/tool";
+import Toast from "wepy-com-toast";
+
+export default class UserCenter extends wepy.page {
+  components = {
+    toast: Toast
+  };
+
+  config = {
+    navigationBarTitleText: "个人中心"
+  };
+
+  data = {
+    info: {}
+  };
+
+  methods = {
+    phoneCall() {
+      let phoneNumber = this.info.invitationCode || "4006858188";
+      wepy.makePhoneCall({ phoneNumber });
+    }
+  };
+
+  onLoad() {
+    let token = this.$parent.globalData.nowToken;
+    let reqData = {
+      url: ApiUrl.userCenter.personCenter,
+      data: Tool.genReqBody(0, token),
+      method: "POST"
+    };
+    wepy.request(reqData).then(
+      res => {
+        if (res.data.code === 0) {
+          this.info = res.data.data;
+          this.$apply();
+        } else {
+          this.showToast({ title: res.data.showMsg });
+        }
+      },
+      err => {
+        this.showToast({ title: "网络连接不上" });
+      }
+    );
+  }
+
+  showToast({ title }) {
+    this.$invoke("toast", "show", {
+      title
+    });
+  }
+}
+</script>
+
+<style lang="scss">
+.user-center {
+  width: 100%;
+  height: 100%;
+  box-sizing: border-box;
+  background-color: rgb(247, 247, 247);
+  .header {
+    box-sizing: border-box;
+    position: relative;
+    width: 750rpx;
+    height: 310rpx;
+    padding: 0 30rpx;
+    margin-bottom: 11rpx;
+    background-color: #fff;
+    .shop-info {
+      width: 480rpx;
+      padding-top: 90rpx;
+      .shop-name {
+        font-size: 44rpx;
+        font-weight: 600;
+        color: #383831;
+      }
+      .address {
+        margin-top: 9rpx;
+        font-size: 28rpx;
+        color: #bcbcbc;
+      }
+    }
+    .logo {
+      position: absolute;
+      top: 50%;
+      right: 30rpx;
+      transform: translate(0, -50%);
+      width: 184rpx;
+      height: 184rpx;
+      // background-color: #eee;
+    }
+  }
+  .item {
+    position: relative;
+    z-index: 1;
+    padding: 0 30rpx;
+    background-color: #fff;
+    .bottom-line {
+      position: absolute;
+      z-index: 10;
+      width: 650rpx;
+      height: 1rpx;
+      background-color: rgba(204, 204, 204, 0.5);
+      bottom: 1rpx;
+      right: 0;
+    }
+    &.update {
+      margin-top: 10rpx;
+    }
+    .item-inner {
+      position: relative;
+      height: 120rpx;
+      box-sizing: border-box;
+      .icon {
+        position: absolute;
+        top: 50%;
+        left: 0;
+        transform: translate(0, -50%);
+        width: 42rpx;
+        height: 42rpx;
+      }
+      .label {
+        position: absolute;
+        top: 50%;
+        left: 70rpx;
+        transform: translate(0, -50%);
+        font-size: 38rpx;
+        &.hot image {
+          width: 53.5rpx;
+          height: 29.5rpx;
+          margin-left: 12rpx;
+        }
+      }
+      .icon-right-arrow {
+        position: absolute;
+        top: 50%;
+        right: 0;
+        transform: translate(0, -50%);
+        display: inline-block;
+        width: 20rpx;
+        height: 20rpx;
+        &::before {
+          content: "";
+          display: block;
+          width: 20rpx;
+          height: 20rpx;
+          margin-left: -8rpx;
+          transform: rotate(-45deg);
+          border-right: 2rpx solid #d7d7d7;
+          border-bottom: 2rpx solid #d7d7d7;
+        }
+      }
+    }
+  }
+
+  .upgrade-desc {
+    padding: 0 78rpx 0 120rpx;
+    view {
+      position: relative;
+      font-size: 26rpx;
+      line-height: 1.77;
+      color: #bcbcbc;
+      &::before {
+        position: absolute;
+        top: 50%;
+        left: -20rpx;
+        transform: translate(0, -50%);
+        content: "";
+        display: inline-block;
+        width: 8rpx;
+        height: 8rpx;
+        border-radius: 50%;
+        background-color: #bcbcbc;
+      }
+    }
+  }
+
+  .btn-contact-adviser {
+    margin-top: 40rpx;
+    width: 370rpx;
+    height: 70rpx;
+    line-height: 70rpx;
+    font-size: 28rpx;
+    color: #4487f8;
+    background-color: #fff;
+    &::after {
+      border-color: #4487f8;
+    }
+    image {
+      width: 29rpx;
+      height: 29rpx;
+      margin-right: 10rpx;
+    }
+  }
+}
+.desc {
+  width: 750rpx;
+  padding-bottom: 30rpx;
+  background-color: #fff;
+}
+</style>

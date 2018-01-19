@@ -1,0 +1,3 @@
+<view class="video" style="height:{{itemData.boxHeight}}">
+    <video src="{{itemData.src}}" style="{{itemData.nowSty}}" objectFit="fill" autoplay="{{itemData.autoplay}}" loop="{{itemData.loop}}"></video>
+  </view>

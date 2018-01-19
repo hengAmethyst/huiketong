@@ -1,0 +1,173 @@
+<template>
+  <view class="custom-detail" wx:if="{{shopList.length > 0}}">
+    <view class="desc">选择小程序</view>
+    <repeat for="{{shopList}}" key="index" index="index" item="item">
+      <view class="shop-item" @tap="handleTapShop({{index}})">
+        <view class="prefix"></view>
+        <view class="title">{{item.shopName}}</view>
+        <view class="icon-go">
+          <view class="icon-go-inner"></view>
+        </view>
+      </view>
+    </repeat>
+  </view>
+  <view class="case" wx:else>
+    <image class="bg" src="../../../img/image_background_custom.jpg" />
+    <scroll-view class="scroll-container" scroll-x>
+      <image class="case-img" src="../../../img/case_02.jpg" style="margin-left:115rpx" />
+      <image class="case-img" src="../../../img/case_03.jpg" />
+      <image class="case-img" src="../../../img/case_04.jpg" style="margin-right:115rpx;" />
+    </scroll-view>
+  </view>
+
+  <toast />
+</template>
+
+<script>
+import wepy from "wepy";
+import ApiUrl from "@/api-url";
+import * as Tool from "@/tool";
+import Toast from "wepy-com-toast";
+
+export default class Custom extends wepy.page {
+  components = {
+    toast: Toast
+  };
+
+  config = {
+    navigationBarTitleText: "自定义模板"
+  };
+
+  data = {
+    shopList: []
+  };
+
+  methods = {
+    handleTapShop(index) {
+      console.log(arguments);
+      let item = this.shopList[index];
+      if (item) {
+        wepy.navigateTo({
+          url:
+            "/pages/website/shop/shop" +
+            "?id=" +
+            item.newTplId +
+            "&shopId=" +
+            item.id
+        });
+      }
+    }
+  };
+
+  showToast({ title }) {
+    this.$invoke("toast", "show", {
+      title
+    });
+  }
+
+  onLoad() {
+    let userId = this.$parent.globalData.userId;
+    let token = this.$parent.globalData.nowToken;
+    if (userId) {
+      let reqData = {
+        url: ApiUrl.shop.queryShopList,
+        data: Tool.genReqBody({ userId }, token),
+        method: "POST"
+      };
+
+      wepy.request(reqData).then(
+        res => {
+          if (res.data.code === 0) {
+            console.log("shopList", res.data.data);
+            this.shopList = res.data.data;
+            this.$apply();
+          }
+        },
+        err => {
+          this.showToast({ title: "网络连接不上" });
+        }
+      );
+    }
+  }
+}
+</script>
+
+<style lang="scss" scoped>
+.custom-detail {
+  box-sizing: border-box;
+  width: 100%;
+  height: 100%;
+  padding: 0 33rpx;
+  .desc {
+    height: 108rpx;
+    line-height: 108rpx;
+    font-size: 32rpx;
+    font-weight: 600;
+    text-align: left;
+    color: #222222;
+    border-bottom: 1rpx solid rgba(204, 204, 204, 0.5);
+  }
+  .shop-item {
+    height: 100rpx;
+    line-height: 100rpx;
+    margin: 20rpx 0;
+    position: relative;
+    .prefix {
+      position: absolute;
+      top: 50%;
+      left: 0;
+      transform: translate(0, -50%);
+      width: 6rpx;
+      height: 45rpx;
+      border-radius: 3rpx;
+      background-color: #4487f8;
+    }
+    .title {
+      font-size: 30rpx;
+      color: #222222;
+      margin: 0 34rpx;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      overflow: hidden;
+    }
+    .icon-go {
+      position: absolute;
+      top: 50%;
+      right: 24rpx;
+      width: 24rpx;
+      height: 24rpx;
+      transform: translate(0, -50%);
+      .icon-go-inner {
+        width: 24rpx;
+        height: 24rpx;
+        border-top: 1rpx solid #ccc;
+        border-right: 1rpx solid #ccc;
+        transform: rotate(45deg);
+      }
+    }
+  }
+}
+.case {
+  padding-top: 241rpx;
+}
+.bg {
+  position: absolute;
+  width: 750rpx;
+  height: 750rpx;
+  top: 0;
+  left: 0;
+  z-index: -1;
+}
+.scroll-container {
+  // margin-top: 241rpx;
+  width: 100%;
+  white-space: nowrap;
+}
+.case-img {
+  margin-right: 60rpx;
+  width: 520rpx;
+  height: 923rpx;
+  display: inline-block;
+  box-shadow: 0 2px 10px 0 rgba(78, 145, 173, 0.29);
+}
+</style>

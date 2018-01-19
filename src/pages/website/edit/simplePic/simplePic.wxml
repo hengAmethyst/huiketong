@@ -1,0 +1,16 @@
+<view class="simplePic">
+    <view class="title">
+        <view class="left">
+            <text class="name">单图</text>
+        </view>
+        <sort itemIndex="{{itemIndex}}" bindupdate="update" gData="{{gData}}"></sort>
+    </view>
+    <!-- add-btn -->
+    <view class="add">
+        <view class="add-box" bindtap="upload" wx:if="{{gData[itemIndex].webTemplatePicList.length<1}}">
+            <text class="addmark">+</text>
+            <text class="scale">690*300</text>
+        </view>
+        <image src="{{gData[itemIndex].webTemplatePicList[0].url}}" wx:else></image>
+    </view>
+</view>

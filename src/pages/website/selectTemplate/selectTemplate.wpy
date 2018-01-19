@@ -1,0 +1,413 @@
+<template>
+  <view class="home" hidden="{{loading}}">
+    <view class="base-template {{hasShop ? 'small' : ''}}">
+      <!-- 背景 -->
+      <image src="../../../img/base_bg_s.jpg" class="base-bg-s" wx:if="{{hasShop}}"></image>
+      <image src="../../../img/base_bg.jpg" class="base-bg" wx:else></image>
+      <!-- 标签 -->
+      <image src="../../../img/base_tip.png" class="base-tip"></image>
+      <image src="{{baseInfo.logo}}" class="logo"></image>
+      <view class="title">{{baseInfo.name}}</view>
+      <view class="navigation" @tap.stop="toDetail">进入我的微官网
+        <image src="../../../img/right_arrow.png" class="icon"></image>
+      </view>
+    </view>
+    <!-- 已创建店铺时，展示模板列表 -->
+    <view class="shop-list" wx:if="{{hasShop}}">
+      <view class="title">属于您自己的模板</view>
+      <view class="template-custom-list">
+        <block wx:for='{{shopList}}' wx:key="index">
+          <view class="template-custom-item" @tap="handleTapShopDetail({{index}})">
+            <image class="item-bg" src="../../../img/item_bg.png"></image>
+            <text class="desc">小程序</text>
+            <view class="item-title">商城高级版</view>
+            <image class="icon-arrow" src="../../../img/right_arrow_2.png"></image>
+          </view>
+        </block>
+        <view class="template-custom-item more" wx:if="{{shopList.length === 1}}">
+          <image class="item-bg" src="../../../img/item_bg.png"></image>
+          <text class="desc">小程序</text>
+          <view class="item-title">制作更多模板</view>
+          <view class="item-title">请登录</view>
+          <view class="item-title">cloud.newjoys.cn</view>
+        </view>
+      </view>
+    </view>
+    <!-- 没有店铺时展示默认模板 -->
+    <view class="shop-list" wx:else>
+      <view class="title">想要获取更好的模板吗？</view>
+      <view class="template-demo-list">
+        <repeat for="{{demoList}}" key="index" index="index" item="item">
+          <view class="template-demo-item" @tap="handleTapDemoDetail({{index}})">
+            <image src="{{item.shopLogo}}" class="demo-img"></image>
+            <!-- <text class="demo-title">{{item.title}}</text> -->
+          </view>
+        </repeat>
+      </view>
+    </view>
+  </view>
+
+</template>
+
+<script>
+import wepy from "wepy";
+import ApiUrl from "@/api-url";
+import * as Tool from "@/tool";
+
+export default class SelectTemplate extends wepy.page {
+  config = {};
+  data = {
+    userId: null,
+    baseInfo: {
+      logo: "",
+      name: ""
+    },
+    demoList: [],
+    shopList: [],
+    hasShop: false,
+    loading:false
+  };
+
+  getShopList() {
+    let userId = this.$parent.globalData.userId;
+    let token = this.$parent.globalData.nowToken;
+    if (userId) {
+      let reqData = {
+        url: ApiUrl.shop.queryShopList,
+        data: Tool.genReqBody({ userId }, token),
+        method: "POST"
+      };
+
+      return wepy.request(reqData).then(
+        res => {
+          // console.log(res);
+          let response = res.data;
+          if (response.code === 0) {
+            return response.data;
+          } else {
+            wx.showToast({
+              title: "请求数据失败",
+              image: "../../../img/error.png",
+              duration: 2000
+            });
+          }
+        },
+        err => {
+          wepy.showToast({
+            title: "网络连接不上",
+            image: "../../../img/warning.png",
+            duration: 2000
+          });
+        }
+      );
+    }
+  }
+
+  getBaseInfo() {
+    let param = {
+      companyId: this.$parent.globalData.companyId
+    };
+    return wepy
+      .request({
+        url: ApiUrl.template.query,
+        data: Tool.genReqBody(param, this.$parent.globalData.nowToken),
+        method: "POST"
+      })
+      .then(
+        res => {
+          // console.log("数据展示,", res);
+          let response = res.data;
+          if (response.code === 0) {
+            return response.data;
+          } else {
+            wx.showToast({
+              title: "请求数据失败",
+              image: "../../../img/error.png",
+              duration: 2000
+            });
+          }
+        },
+        err => {
+          wepy.showToast({
+            title: "网络连接不上",
+            image: "../../../img/warning.png",
+            duration: 2000
+          });
+        }
+      );
+  }
+
+  fetchAllData() {
+    return Promise.all([this.getBaseInfo(), this.getShopList()]).then(res => {
+      // console.log(res);
+      this.baseInfo = {
+        logo: res[0].logo,
+        name: res[0].companyName
+      };
+      if (res[1].defaultShopList) {
+        this.demoList = res[1].defaultShopList;
+        this.hasShop = false;
+      } else if (res[1].myShopList) {
+        this.shopList = res[1].myShopList;
+        // this.shopList = res[0];
+        this.hasShop = true;
+      } else {
+        this.hasShop = false;
+      }
+      this.loading = false;
+      this.$apply();
+      wx.hideLoading();
+    });
+  }
+
+  onLoad(options) {
+    this.loading = true;
+    let app = this.$parent;
+    // this.userId = this.$parent.globalData.userId;
+    let register = () => {
+      if (app.globalData.userId) {
+        if (!app.globalData.companyId) {
+          wepy.navigateTo({
+            url: "/pages/website/userInfo/userInfo"
+          });
+        } else {
+          this.fetchAllData();
+        }
+      } else {
+        wepy.redirectTo({
+          url: "../register/register"
+        });
+      }
+    };
+    if (app.globalData.nowToken) {
+      register();
+    } else {
+      app.loginReadyCallback = register;
+    }
+  }
+
+  methods = {
+    /**
+    * 跳转基础详情页
+     */
+    toDetail() {
+      wepy.navigateTo({
+        url: "../detail/detail"
+      });
+    },
+    /**
+    *跳转公共模板详情页
+     */
+    handleTapDemoDetail(index) {
+      let item = this.demoList[index];
+      if (item) {
+        wepy.navigateTo({
+          url: `/pages/website/shop/shop?id=${item.newTplId}&shopId=${item.id}&demo=0`
+        });
+      }
+    },
+    /**
+    * 跳转自定义模板详情页
+     */
+    handleTapShopDetail(index) {
+      let item = this.shopList[index];
+      if (item) {
+        wepy.navigateTo({
+          url: `/pages/website/shop/shop?id=${item.newTplId}&shopId=${item.id}`
+        });
+      }
+    }
+  };
+}
+</script>
+
+<style lang="scss">
+page {
+  height: 0;
+}
+.home {
+  padding-top: 40rpx;
+}
+.base-template {
+  position: relative;
+  z-index: 1;
+  margin: 0 auto 70rpx;
+  box-sizing: border-box;
+  padding-top: 57rpx;
+  padding-left: 70rpx;
+  width: 670rpx;
+  height: 700rpx;
+  border-radius: 20rpx;
+  &.small {
+    height: 400rpx;
+    .logo {
+      margin-bottom: 30rpx;
+      width: 120rpx;
+      height: 120rpx;
+    }
+    .title {
+      height: 56rpx;
+      line-height: 56rpx;
+      font-size: 40rpx;
+    }
+    .navigation {
+      bottom: 59rpx;
+    }
+  }
+  .base-bg {
+    position: absolute;
+    z-index: -1;
+    width: 100%;
+    height: 100%;
+    top: 0;
+    left: 0;
+  }
+  .base-bg-s {
+    position: absolute;
+    z-index: -1;
+    width: 100%;
+    height: 100%;
+    top: 0;
+    left: 0;
+  }
+  .base-tip {
+    position: absolute;
+    z-index: 10;
+    width: 168rpx;
+    height: 60rpx;
+    right: -5rpx;
+    top: 57rpx;
+  }
+  .logo {
+    margin-bottom: 42rpx;
+    width: 160rpx;
+    height: 160rpx;
+  }
+  .title {
+    line-height: 67rpx;
+    font-size: 48rpx;
+    font-weight: 600;
+    color: #fff;
+  }
+  .navigation {
+    position: absolute;
+    left: 70rpx;
+    bottom: 152rpx;
+    height: 45rpx;
+    line-height: 45rpx;
+    color: #fff;
+    font-size: 32rpx;
+    .icon {
+      display: inline-block;
+      vertical-align: top;
+      margin-top: -7rpx;
+      margin-left: 15rpx;
+      width: 60rpx;
+      height: 60rpx;
+    }
+  }
+}
+.shop-list {
+  margin: 0 auto;
+  width: 670rpx;
+  .title {
+    margin-bottom: 30rpx;
+    height: 56rpx;
+    line-height: 56rpx;
+    font-size: 40rpx;
+    font-weight: 600;
+    color: #222;
+  }
+  .template-demo-list {
+    font-size: 0;
+    .template-demo-item {
+      display: inline-block;
+      position: relative;
+      z-index: 1;
+      margin-right: 32rpx;
+      margin-bottom: 32rpx;
+      width: 202rpx;
+      height: 174rpx;
+      text-align: center;
+      line-height: 174rpx;
+      border-radius: 10rpx;
+      &:nth-child(3n) {
+        margin-right: 0;
+      }
+      .demo-img {
+        width: 100%;
+        height: 100%;
+      }
+      .demo-title {
+        display: block;
+        position: absolute;
+        z-index: 10;
+        width: 202rpx;
+        height: 50rpx;
+        line-height: 50rpx;
+        text-align: center;
+        top: 62rpx;
+        left: 0;
+        color: #000;
+        font-size: 36rpx;
+      }
+    }
+  }
+  .template-custom-list {
+    font-size: 0;
+    width: 670rpx;
+    .template-custom-item {
+      position: relative;
+      z-index: 1;
+      box-sizing: border-box;
+      display: inline-block;
+      margin-right: 30rpx;
+      margin-bottom: 30rpx;
+      padding: 30rpx;
+      width: 320rpx;
+      height: 400rpx;
+      box-shadow: 0 5rpx 30rpx 0 #e2e4e6;
+      border-radius: 15rpx;
+      &:nth-child(2n) {
+        margin-right: 0;
+      }
+      &.more {
+        opacity: 0.8;
+        .item-title {
+          font-size: 34rpx;
+        }
+      }
+      .item-bg {
+        position: absolute;
+        z-index: -1;
+        width: 320rpx;
+        height: 400rpx;
+        left: 0;
+        top: 0;
+      }
+      .desc {
+        margin-bottom: 10rpx;
+        height: 28rpx;
+        line-height: 28rpx;
+        font-size: 20rpx;
+        color: #8f94aa;
+      }
+      .item-title {
+        line-height: 56rpx;
+        font-size: 40rpx;
+        font-weight: 600;
+        color: #7a86a0;
+      }
+      .icon-arrow {
+        position: absolute;
+        z-index: 10;
+        bottom: 50rpx;
+        left: 30rpx;
+        display: block;
+        width: 36rpx;
+        height: 36rpx;
+      }
+    }
+  }
+}
+</style>

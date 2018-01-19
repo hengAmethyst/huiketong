@@ -1,0 +1,545 @@
+<template>
+  <view class="statistics">
+    <!-- 店铺名称和日期选择 -->
+    <view class="merchant">
+      <image src="../../../img/merchant-background.jpg" class="merchant-bg"></image>
+      <view class="name">{{merchantName}}</view>
+      <picker mode="date" value="{{date}}" start="{{startDate}}" end="{{endDate}}" bindchange="bindDateChange">
+        <view class="date">{{date}}
+          <image src="/img/icon_date.png" />
+        </view>
+      </picker>
+    </view>
+
+    <!-- 点击次数统计 -->
+    <view class="click-num">
+      <view class="left">
+        <view class="num">{{type4Data.count}}<text>次</text></view>
+        <view class="percent" style="color: {{type4Data.up ? 'red' : 'green'}};">{{type4Data.rate}}%</view>
+        <view class="type">商品购买点击(基础)</view>
+        <view class="split"></view>
+      </view>
+      <view class="right">
+        <view class="num">{{type3Data.count}}<text>次</text></view>
+        <view class="percent" style="color: {{type3Data.up ? 'red' : 'green'}};">{{type3Data.rate}}%</view>
+        <view class="type">表单提交(基础)</view>
+      </view>
+    </view>
+
+    <!-- 统计图 -->
+    <view class="cartogram">
+      <view class="pics">
+        <view class="left">
+          <canvas style="width: 300rpx; height: 300rpx;" canvas-id="firstCanvas"></canvas>
+          <view class="words">分享次数</view>
+        </view>
+        <view class="right">
+          <canvas style="width: 300rpx; height: 300rpx;" canvas-id="secondCanvas"></canvas>
+          <view class="words">入店人数</view>
+        </view>
+      </view>
+
+      <!-- 图例 -->
+      <view class="pic-dir">
+        <view class="pic-dir-box">
+          <view class="model-1">
+            <view class="block"></view>
+            基础版
+          </view>
+          <view class="model-2">
+            <view class="block"></view>
+            进阶版
+          </view>
+          <!-- <view class="model-3">
+            <view class="block"></view>
+            进阶版模块二
+          </view> -->
+        </view>
+      </view>
+    </view>
+
+    <toast />
+  </view>
+</template>
+
+<script>
+import wepy from "wepy";
+//引入List、Panel和Counter组件
+import ApiUrl from "../../../api-url";
+import * as Tool from '@/tool';
+import Toast from "wepy-com-toast";
+
+const CANVAS_WIDTH = 150;
+
+export default class statistics extends wepy.page {
+  components = {
+    toast: Toast
+  };
+
+  //页面配置
+  config = {
+    navigationBarTitleText: "数据统计"
+  };
+
+  //声明页面中将要使用到的组件
+  components = {};
+
+  //可用于页面模板中绑定的数据
+  data = {
+    merchantName: "上海星巴克(SOHO)店",
+    date: Tool.formatDateTime(Date.now(), 'YYYY-MM-DD'), //选择的日期
+    startDate: "2015-01-01",
+    endDate: Tool.formatDateTime(Date.now(), 'YYYY-MM-DD'),
+
+    type3Data: {},
+    type4Data: {}
+  };
+
+  methods = {
+    // 时间选择
+    bindDateChange(e) {
+      console.log("picker发送选择改变，携带值为", e.detail.value);
+      this.date = e.detail.value;
+      this.refreshData();
+    }
+  };
+
+  draw(ctx, { scales, count, rise, up }) {
+    // 圆心 x,y 坐标， r 半径
+    let x = CANVAS_WIDTH / 2;
+    let y = CANVAS_WIDTH / 2;
+    let r = (CANVAS_WIDTH / 2) * 4 / 5;
+    let sAngle = 0;
+    let eAngle = 0;
+
+    let maxLineWidth = 8;
+    let minLineWidth = 2;
+    let incStep = (maxLineWidth - minLineWidth) / scales.length;
+
+    let colors = ['#86e7ff', '#8589eb', '#188bf5'];
+
+    for (let i = 0, l = scales.length; i < l; i++) {
+      ctx.beginPath();
+      ctx.setLineWidth(maxLineWidth - incStep * i);
+
+      sAngle = eAngle;
+      eAngle = eAngle + 2 * Math.PI * scales[i];
+
+      ctx.arc(x, y, r, sAngle, eAngle);
+      ctx.setStrokeStyle(colors[i % colors.length]);
+      ctx.stroke();
+    }
+
+    ctx.setTextAlign('center');
+
+    ctx.setFontSize(30);
+    ctx.setFillStyle('black');
+    ctx.fillText(count, x, y);
+
+    if (up) {
+      ctx.setFillStyle('red');
+    } else {
+      ctx.setFillStyle('green');
+    }
+
+    let xOffset = 5;
+    let yOffset = 25;
+    ctx.setFontSize(12);
+    ctx.fillText(rise + '%', x + xOffset, y + yOffset);
+
+    let w = 8;
+    let h = 5;
+    xOffset = -24;
+    ctx.beginPath();
+    if (up) {
+      ctx.moveTo(x + xOffset, y + yOffset);
+      ctx.lineTo(x + xOffset + w, y + yOffset);
+      ctx.lineTo(x + xOffset + w / 2, y + yOffset - h);
+    } else {
+      ctx.moveTo(x + xOffset, y + yOffset - h);
+      ctx.lineTo(x + xOffset + w, y + yOffset - h);
+      ctx.lineTo(x + xOffset + w / 2, y + yOffset);
+    }
+    ctx.fill();
+
+    ctx.draw();
+  }
+
+  fetchData(type, date) {
+    let token = this.$parent.globalData.nowToken;
+    let companyId = this.$parent.globalData.companyId;
+
+    let param = {
+      companyId,
+      searchDate: date,
+      type
+    };
+
+    let reqData = {
+      url: ApiUrl.count,
+      data: Tool.genReqBody(param, token),
+      method: 'POST'
+    };
+    return wepy.request(reqData)
+      .then(res => {
+        if (res.data.code === 0) {
+          return res.data.data;
+        } else {
+          throw new Error(res.data.showMsg);
+        }
+      }, err => {
+        throw new Error('网络连接不上');
+      });
+  }
+
+  refreshData() {
+    this.fetchData(1, this.date)
+      .then(data => {
+        let info = {
+          scales: [0, 0],
+          count: 0,
+          rise: 0,
+          up: true
+        };
+
+        if (data) {
+          let scales = [];
+          let total = 0;
+          let it = data.share.find(it => it.type == 0);
+          if (it) {
+            scales[0] = it.count;
+            total += it.count;
+          }
+          it = data.share.find(it => it.type == 1);
+          if (it) {
+            scales[1] = it.count;
+            total += it.count;
+          }
+          scales[0] = scales[0] / total;
+          scales[1] = scales[1] / total;
+
+          let rise = (data.shareRate - 1) * 100;
+
+          info = {
+            scales,
+            count: data.shareCount,
+            rise: Math.abs(rise).toFixed(2),
+            up: rise > 0
+          };
+        }
+
+        const ctx = wx.createCanvasContext('firstCanvas');
+        this.draw(ctx, info);
+      });
+    this.fetchData(2, this.date)
+      .then(data => {
+        let info = {
+          scales: [0, 0],
+          count: 0,
+          rise: 0,
+          up: true
+        };
+
+        if (data) {
+          let scales = [];
+          let total = 0;
+          let it = data.visit.find(it => it.type == 0);
+          if (it) {
+            scales[0] = it.count;
+            total += it.count;
+          }
+          it = data.visit.find(it => it.type == 1);
+          if (it) {
+            scales[1] = it.count;
+            total += it.count;
+          }
+          scales[0] = scales[0] / total;
+          scales[1] = scales[1] / total;
+
+          let rise = (data.visitRate - 1) * 100;
+
+          info = {
+            scales,
+            count: data.shareCount,
+            rise: Math.abs(rise).toFixed(2),
+            up: rise > 0
+          };
+        }
+
+        const ctx = wx.createCanvasContext('secondCanvas');
+        this.draw(ctx, info);
+      });
+    this.fetchData(3, this.date)
+      .then(data => {
+        this.type3Data = {
+          count: 0,
+          rate: 0,
+          up: true
+        };
+        if (data) {
+          let rate = (data.formSubmitRate - 1) * 100;
+          this.type3Data = {
+            count: data.formSubmitCount,
+            rate: Math.abs(rate).toFixed(2),
+            up: rate >= 0
+          };
+        }
+        this.$apply();
+      });
+    this.fetchData(4, this.date)
+      .then(data => {
+        this.type4Data = {
+          count: 0,
+          rate: 0,
+          up: true
+        };
+        if (data) {
+          let rate = (data.buyClickRate - 1) * 100;
+          this.type4Data = {
+            count: data.buyClickCount,
+            rate: Math.abs(rate).toFixed(2),
+            up: rate >= 0
+          };
+        }
+        this.$apply();
+      });
+  }
+
+  onLoad() {
+    this.refreshData();
+
+    let token = this.$parent.globalData.nowToken;
+    let reqData = {
+      url: ApiUrl.userCenter.personCenter,
+      data: Tool.genReqBody(0, token),
+      method: 'POST'
+    };
+    wepy.request(reqData)
+      .then(res => {
+        if (res.data.code === 0) {
+          this.merchantName = res.data.data.companyName;
+          this.$apply();
+        } else {
+          this.showToast({ title: res.data.showMsg });
+        }
+      }, err => {
+        this.showToast({ title: "网络连接不上" });
+      });
+  }
+
+  showToast({ title }) {
+    this.$invoke("toast", "show", {
+      title
+    });
+  }
+}
+</script>
+<style lang="scss">
+.statistics {
+  width: 100%;
+  height: 100%;
+  background: #f0f0f0;
+  .merchant {
+    position: relative;
+    z-index: 1;
+    width: 750rpx;
+    height: 330rpx;
+    .merchant-bg {
+      position: absolute;
+      z-index: -1;
+      top: 0;
+      left: 0;
+      width: 750rpx;
+      height: 330rpx;
+    }
+    .name {
+      display: inline-block;
+      width: 100%;
+      margin-top: 80rpx;
+      text-align: center;
+      font-size: 48rpx;
+      color: #fffeff;
+    }
+    .date {
+      display: inline-block;
+      width: 100%;
+      margin-top: 32rpx;
+      text-align: center;
+      font-size: 32rpx;
+      font-weight: 600;
+      color: #fffeff;
+      image {
+        width: 16rpx;
+        height: 10rpx;
+        margin-bottom: 10rpx;
+        margin-left: 7rpx;
+      }
+    }
+  }
+  // 点击次数统计
+  .click-num {
+    display: flex;
+    width: 100%;
+    height: 220rpx;
+    background: #fff;
+    .left {
+      position: relative;
+      width: 50%;
+      height: 100%;
+      .num {
+        width: 100%;
+        margin-top: 28rpx;
+        text-align: center;
+        font-size: 50rpx;
+        font-weight: 500;
+        color: #3f3f3f;
+        text {
+          font-size: 24rpx;
+          color: #222;
+        }
+      }
+      .percent {
+        width: 100%;
+        margin-top: 10rpx;
+        text-align: center;
+        font-size: 24rpx;
+        color: #f54545;
+      }
+      .type {
+        width: 100%;
+        margin-top: 17rpx;
+        text-align: center;
+        font-size: 24rpx;
+        color: #8b8f93;
+      }
+    }
+    .split {
+      position: absolute;
+      right: 0;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 1rpx;
+      height: 130rpx;
+      background: #ccc;
+      opacity: 0.5;
+    }
+    .right {
+      width: 50%;
+      height: 100%;
+      .num {
+        width: 100%;
+        margin-top: 28rpx;
+        text-align: center;
+        font-size: 50rpx;
+        font-weight: 500;
+        color: #3f3f3f;
+        text {
+          font-size: 24rpx;
+          color: #222;
+        }
+      }
+      .percent {
+        width: 100%;
+        margin-top: 10rpx;
+        text-align: center;
+        font-size: 24rpx;
+        color: #0f990f;
+      }
+      .type {
+        width: 100%;
+        margin-top: 17rpx;
+        text-align: center;
+        font-size: 24rpx;
+        color: #8b8f93;
+      }
+    }
+  }
+  // 统计图
+  .cartogram {
+    width: 100%;
+    height: 468rpx;
+    margin-top: 10rpx;
+    background: #fff;
+    .pics {
+      display: flex;
+      width: 100%;
+      height: 370rpx;
+      .left {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        width: 50%;
+        height: 100%;
+        .words {
+          margin-top: 12rpx;
+
+          font-size: 32rpx;
+          font-weight: 600rpx;
+          color: #8b8f93;
+        }
+      }
+      .right {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        width: 50%;
+        height: 100%;
+        .words {
+          margin-top: 12rpx;
+          font-size: 32rpx;
+          font-weight: 600rpx;
+          color: #8b8f93;
+        }
+      }
+    }
+  }
+  // 图例
+  .pic-dir {
+    display: flex;
+    justify-content: center;
+    width: 100%;
+    margin-top: 40rpx;
+    .pic-dir-box {
+      display: flex;
+      justify-content: space-between;
+      width: 482rpx;
+      .model-1 {
+        display: flex;
+        align-items: center;
+        font-size: 20rpx;
+        color: #8b8f93;
+        .block {
+          width: 14rpx;
+          height: 14rpx;
+          margin-right: 10rpx;
+          background: #a7d6ff;
+        }
+      }
+      .model-2 {
+        display: flex;
+        align-items: center;
+        font-size: 20rpx;
+        color: #8b8f93;
+        .block {
+          width: 14rpx;
+          height: 14rpx;
+          margin-right: 10rpx;
+          background: #9194f3;
+        }
+      }
+      .model-3 {
+        display: flex;
+        align-items: center;
+        font-size: 20rpx;
+        color: #8b8f93;
+        .block {
+          width: 14rpx;
+          height: 14rpx;
+          margin-right: 10rpx;
+          background: #1367e7;
+        }
+      }
+    }
+  }
+}
+</style>

@@ -1,0 +1,139 @@
+{
+    "code": 0,
+    "data": {
+      "address": "金沙江西路568号",
+      "avatar": "http://xxx.xxx.xx/avatar.png",
+      "companyName": "汉晶有限公司",
+      "createTime": 1514195700000,
+      "delFlag": 0,
+      "financing": "不需要融资",
+      "head": "老魏",
+      "id": 1,
+      "industryId": 1,
+      "introduction": "晶蝶作为专业餐饮服务业SaaS系统和生态服务商，以构建领先的智能化餐饮服务生态圈、提供客流沃土和营销养分来激发商家活力、全面解决餐饮服务业运营和管理困境为已任。",
+      "latitude": "",
+      "license": "",
+      "logo": "http://xxx.xxx.xx/logo.png",
+      "longitude": "",
+      "mobile": "13900000000",
+      "scale": "大于100小于500人",
+      "simpleName": "汉晶",
+      "typeId": 1,
+      "updateTime": 1514195701000,
+      "userId": 449,
+      "webTemplate": {
+        "companyId": 1,
+        "createTime": 1514444012000,
+        "delFlag": 0,
+        "id": 1,
+        "templateInfoDTOList": [
+          {
+            "content": "这是一家专业的小程序服务商!1",
+            "id": 55,
+            "infoType": 2,
+            "sorting": 1,
+            "title": "公司简介1",
+            "webTemplatePicList": []
+          },
+          {
+            "content": "这是一家专业的小程序服务商!!2",
+            "id": 56,
+            "infoType": 2,
+            "sorting": 3,
+            "title": "公司简介2",
+            "webTemplatePicList": []
+          },
+          {
+            "content": "最贵的商品",
+            "id": 1,
+            "infoType": 3,
+            "sorting": 5,
+            "title": "商品1",
+            "url": "http://192.168.2.9:9000/group1/M00/00/4A/wKgCCVnnbpGAAeKQAAMLI1hKkNc990.jpg",
+            "webTemplatePicList": []
+          },
+          {
+            "id": 1,
+            "infoType": 1,
+            "sorting": 4,
+            "webTemplatePicList": [
+              {
+                "groupId": 1,
+                "id": 98,
+                "templateId": 1,
+                "url": "http://192.168.2.9:9000/group1/M00/00/4A/wKgCCVnnbpGAAeKQAAMLI1hKkNc990.jpg"
+              },
+              {
+                "groupId": 1,
+                "id": 99,
+                "templateId": 1,
+                "url": "http://img1.jinghanit.com/group1/M00/00/66/ag8ollpFqmCASSOBAAAxC95Rafw835.png"
+              },
+              {
+                "groupId": 1,
+                "id": 100,
+                "templateId": 1,
+                "url": "http://img1.jinghanit.com/group1/M00/00/67/ag8ollpGBKSAO9geAATgXNdMi08695.jpg"
+              }
+            ]
+          },
+          {
+            "id": 1,
+            "infoType": 5,
+            "sorting": 10,
+            "webTemplatePicList": [
+              {
+                "groupId": 1,
+                "id": 98,
+                "templateId": 1,
+                "url": "http://192.168.2.9:9000/group1/M00/00/4A/wKgCCVnnbpGAAeKQAAMLI1hKkNc990.jpg"
+              }
+            ]
+          },
+          {
+            "id": 2,
+            "infoType": 1,
+            "sorting": 6,
+            "webTemplatePicList": [
+              {
+                "groupId": 2,
+                "id": 101,
+                "templateId": 1,
+                "url": "http://img1.jinghanit.com/group1/M00/00/67/ag8ollpGBKmABUA6AAUDovQO2s0589.jpg"
+              }
+            ]
+          },
+          {
+            "id": 1,
+            "infoType": 4,
+            "sorting": 2,
+            "status": 0,
+            "webTemplatePicList": []
+          }
+        ],
+        "templatePicList": [
+          {
+            "id": 150,
+            "isTurnView": 0,
+            "templateId": 1,
+            "url": "http://img1.jinghanit.com/group1/M00/00/67/ag8ollpGBKSAO9geAATgXNdMi08695.jpg"
+          },
+          {
+            "id": 151,
+            "isTurnView": 0,
+            "templateId": 1,
+            "url": "http://img1.jinghanit.com/group1/M00/00/67/ag8ollpGBKmABUA6AAUDovQO2s0589.jpg"
+          },
+          {
+            "id": 152,
+            "isTurnView": 0,
+            "templateId": 1,
+            "url": "http://img1.jinghanit.com/group1/M00/00/67/ag8ollpGBK2AaHVVAAMCa6va1Ls267.jpg"
+          }
+        ],
+        "title": "1"
+      }
+    },
+    "msg": "获取普通模板信息成功!",
+    "showMsg": "获取普通模板信息成功!"
+  }

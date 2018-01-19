@@ -1,0 +1,3 @@
+<view class="s_video">
+    <video src="{{itemData.config.video.url}}" enable-full-screen="{{true}}" objectFit="contain" controls="true" autoplay="{{itemData.config.autoplay}}" loop="{{true}}"></video>
+</view>

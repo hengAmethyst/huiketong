@@ -1,0 +1,343 @@
+<template>
+  <view class="register">
+    <view class="banner">
+      <view class="title">新乐汇汇客通</view>
+      <view class="sub-title">门店抢先版</view>
+    </view>
+
+    <form @submit="handleFormSubmit">
+      <view class="form-item {{focusName == 'phone' ? 'active' : ''}}">
+        <view class="label {{!phPhone ? 'visible' : ''}}" animation="{{anmPhone}}">手机号</view>
+        <input name="phone" focus="{{fcPhone}}" placeholder="{{phPhone}}" placeholder-class="input-placeholder" maxlength="11" type="number" @input="handleInput('phone')" @focus="handleInputFocus('phone')" @blur="handleInputBlur('phone')" />
+      </view>
+      <view class="form-item {{focusName == 'verificationCode' ? 'active' : ''}}">
+        <view class="label {{!phVerificationCode ? 'visible' : ''}}" animation="{{anmVerificationCode}}">验证码</view>
+        <view class="code-input">
+          <input name="verificationCode" focus="{{fcVerificationCode}}" placeholder="{{phVerificationCode}}" placeholder-class="input-placeholder" maxlength="6" type="number" @input="handleInput('verificationCode')" @focus="handleInputFocus('verificationCode')" @blur="handleInputBlur('verificationCode')" />
+          <text class="get-code-btn {{gettingCode ? 'count-down' : ''}}" @tap="handleGetCode">{{getCodeBtnText}}</text>
+        </view>
+      </view>
+      <view class="form-item {{focusName == 'password' ? 'active' : ''}}">
+        <view class="label {{!phPassword ? 'visible' : ''}}" animation="{{anmPassword}}">密码</view>
+        <input password name="password" focus="{{fcPassword}}" placeholder="{{phPassword}}" placeholder-class="input-placeholder" @input="handleInput('password')" @focus="handleInputFocus('password')" @blur="handleInputBlur('password')" />
+      </view>
+      <view class="form-item {{focusName == 'invitationCode' ? 'active' : ''}}">
+        <view class="label {{!phInvitationCode ? 'visible' : ''}}" animation="{{anmInvitationCode}}">邀请码</view>
+        <input name="invitationCode" placeholder="{{phInvitationCode}}" placeholder-class="input-placeholder" maxlength="16" @input="handleInput('invitationCode')" @focus="handleInputFocus('invitationCode')" @blur="handleInputBlur('invitationCode')" />
+      </view>
+
+      <button class="register-btn" form-type="submit" disabled="{{!phone || !verificationCode || !password}}">绑定</button>
+    </form>
+
+    <navigator @tap.stop="handleOtherApp">更多新乐汇小程序</navigator>
+
+    <toast />
+  </view>
+</template>
+
+<script>
+import wepy from "wepy";
+import ApiUrl from "@/api-url";
+import * as Tool from "@/tool";
+import Toast from "wepy-com-toast";
+
+export default class Register extends wepy.page {
+  anmFocus = wx.createAnimation({ timingFunction: "ease-in" });
+  anmBlur = wx.createAnimation({ timingFunction: "ease-out" });
+
+  components = {
+    toast: Toast
+  };
+
+  data = {
+    phone: "",
+    verificationCode: "",
+    password: "",
+    invitationCode: "",
+
+    gettingCode: false, // 是否正在获取验证码
+    remainingTime: 0, // 剩余秒数
+
+    fcPhone: false,
+    fcPassword: false,
+    fcVerificationCode: false, // 设置验证码输入框获取焦点
+
+    focusName: "", // 当前获取焦点的 input name
+    blurName: "", // 当前失去焦点的 input name
+
+    anmFocusData: {},
+    anmBlurData: {}
+  };
+
+  computed = {
+    anmPhone() {
+      return this.getAnimation("phone");
+    },
+    anmVerificationCode() {
+      return this.getAnimation("verificationCode");
+    },
+    anmPassword() {
+      return this.getAnimation("password");
+    },
+    anmInvitationCode() {
+      return this.getAnimation("invitationCode");
+    },
+    phPhone() {
+      return this.getPlaceholder("phone", "手机号");
+    },
+    phVerificationCode() {
+      return this.getPlaceholder("verificationCode", "验证码");
+    },
+    phPassword() {
+      return this.getPlaceholder("password", "密码");
+    },
+    phInvitationCode() {
+      return this.getPlaceholder("invitationCode", "邀请码");
+    },
+    /** 获取验证码按钮文字 */
+    getCodeBtnText() {
+      if (this.remainingTime > 0) {
+        return this.remainingTime + "s";
+      } else {
+        return "获取";
+      }
+    }
+  };
+
+  methods = {
+    /**
+     * 跳转其他小程序
+     */
+    handleOtherApp() {
+      wepy.navigateToMiniProgram({
+        appId: "wx3342c8ab21314a02"
+      });
+    },
+    handleInput(name, ev) {
+      this[name] = ev.detail.value;
+    },
+    async handleGetCode() {
+      if (!this.checkPhone()) {
+        return;
+      }
+
+      if (this.gettingCode) {
+        return;
+      }
+      this.gettingCode = true;
+      this.fcVerificationCode = true;
+
+      Tool.requestVerificationCode(this.phone);
+
+      this.remainingTime = 60;
+      while (this.remainingTime > 0) {
+        this.$apply();
+        await Tool.sleep(1000);
+        this.remainingTime--;
+      }
+
+      this.gettingCode = false;
+      this.$apply();
+    },
+    handleInputFocus(name) {
+      this.focusName = name;
+
+      if (!this[name]) {
+        this.anmFocus.opacity(1).step();
+        this.anmFocusData = this.anmFocus.export();
+      } else {
+        this.anmFocusData = {};
+      }
+    },
+    handleInputBlur(name) {
+      this.blurName = name;
+
+      if (this.focusName == name) {
+        this.focusName = "";
+      }
+      if (name == "phone") {
+        this.fcPhone = false;
+      } else if (name == "verificationCode") {
+        this.fcVerificationCode = false;
+      } else if (name == "password") {
+        this.fcPassword = false;
+      }
+
+      if (!this[name]) {
+        this.anmBlur.opacity(0).step();
+        this.anmBlurData = this.anmBlur.export();
+      } else {
+        this.anmBlurData = {};
+      }
+    },
+    async handleFormSubmit(ev) {
+      if (!this.checkPhone()) {
+        return;
+      }
+
+      let param = {
+        account: ev.detail.value.phone,
+        password: ev.detail.value.password,
+        // contractId: parseInt(this.contractId),
+        smsCode: ev.detail.value.verificationCode,
+        invitationCode: ev.detail.value.invitationCode
+      };
+      let token = this.$parent.globalData.nowToken;
+
+      console.log("register", param, token);
+
+      let res;
+      try {
+        res = await wepy.request({
+          url: ApiUrl.loginInfo.register,
+          data: Tool.genReqBody(param, token),
+          method: "POST"
+        });
+      } catch (e) {
+        console.log("e", e);
+        this.showToast({ title: "网络连接不上" });
+        return;
+      }
+
+      if (res.data.code === 0) {
+        this.$parent.globalData.userId = res.data.data.id;
+        wepy.switchTab({ url: "/pages/website/userInfo/userInfo" });
+      } else {
+        this.showToast({ title: res.data.showMsg });
+      }
+    }
+  };
+
+  checkPhone() {
+    if (!this.phone || !/^1\d{10}$/.test(this.phone)) {
+      this.fcPhone = true;
+      this.showToast({ title: "手机号码错误" });
+      return false;
+    }
+    return true;
+  }
+
+  getAnimation(name) {
+    return this.focusName == name
+      ? this.anmFocusData
+      : this.blurName == name ? this.anmBlurData : {};
+  }
+
+  getPlaceholder(name, phStr) {
+    if (this.focusName != name && !this[name]) {
+      return phStr;
+    }
+    return "";
+  }
+
+  showToast({ title }) {
+    this.$invoke("toast", "show", {
+      title
+    });
+  }
+}
+</script>
+
+<style lang="scss">
+.input-placeholder {
+  font-size: 36rpx;
+  color: #cccccc;
+}
+
+.register {
+  width: auto;
+  height: auto;
+  margin: 0 50rpx;
+  overflow: hidden;
+
+  /* banner */
+  .banner {
+    margin: 112rpx 0 81rpx;
+    .title {
+      height: 84rpx;
+      color: #031722;
+      font-size: 60rpx;
+      font-weight: 600;
+    }
+    .sub-title {
+      height: 50rpx;
+      font-size: 36rpx;
+      color: #4487f8;
+    }
+  }
+
+  /* 表单 */
+  .form-item {
+    height: 109rpx;
+    margin-bottom: 20rpx;
+    border-bottom: 1rpx solid rgba(204, 204, 204, 0.5);
+    position: relative;
+    &.active {
+      border-bottom: 2rpx solid #008dff;
+    }
+    .label {
+      height: 37rpx;
+      font-size: 26rpx;
+      color: #222222;
+      opacity: 0;
+      &.visible {
+        opacity: 1;
+      }
+    }
+    & > input {
+      height: 56rpx;
+      font-size: 36rpx;
+      position: absolute;
+      bottom: 0;
+      width: 100%;
+    }
+    /* 验证码 */
+    .code-input {
+      width: 100%;
+      position: absolute;
+      bottom: 0;
+      display: flex;
+      justify-content: space-between;
+
+      input {
+        flex-grow: 1;
+        font-size: 36rpx;
+      }
+
+      .get-code-btn {
+        width: 100rpx;
+        color: #008dff;
+        font-size: 32rpx;
+        line-height: 56rpx;
+        &.count-down {
+          color: #9aa2a7;
+        }
+      }
+    }
+  }
+
+  /* 注册按钮 */
+  .register-btn {
+    height: 88rpx;
+    margin-top: 41rpx;
+    background-color: #008dff;
+    border-radius: 2rpx;
+    color: #fff;
+    font-size: 36rpx;
+    &[disabled] {
+      opacity: 0.4;
+      background-color: #4487f8;
+      color: #fff;
+    }
+  }
+
+  /* 导航 */
+  navigator {
+    margin-top: 32rpx;
+    opacity: 0.8;
+    color: #008dff;
+    font-size: 26rpx;
+    text-align: center;
+  }
+}
+</style>

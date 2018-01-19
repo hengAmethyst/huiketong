@@ -1,0 +1,5 @@
+<view class="article-component">
+    <view class="title">{{itemData.config.title}}</view>
+    <image mode="widthFix" wx:if="{{itemData.config.url}}" src="{{itemData.config.url}}"></image>
+    <view class="content">{{itemData.config.text}}</view>
+</view>

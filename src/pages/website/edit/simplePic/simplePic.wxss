@@ -1,0 +1,83 @@
+.simplePic{
+    width:750rpx;
+    height:410rpx;
+    margin-top:10rpx;
+    background:#fff;
+}
+/* 头部 */
+.simplePic .title{
+    display: flex;
+    justify-content: space-between;
+    width:690rpx;
+    height:107rpx;
+    margin:0 auto;
+    background:#fff;
+    border-bottom: 1rpx solid #eee;
+}
+.simplePic .title .left{
+    display: flex;
+    align-items: center;
+    height:100%;
+}
+.simplePic .title .left .name{
+    font-size:32rpx;
+    font-weight: bold;
+    color:#222;
+}
+.simplePic .title .left .scale{
+    margin-left:48rpx;
+    font-size:24rpx;
+    color:#ccc;
+}
+
+.simplePic .title .right{
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width:250rpx;
+    height:100%;
+}
+.simplePic .title .right .img-down{
+    width:34.9rpx;
+    height:34rpx;
+}
+.simplePic .title .right .img-up{
+    width:34.9rpx;
+    height:34rpx;
+}
+.simplePic .title .right .img-del{
+    width:36rpx;
+    height:40rpx;
+}
+/* 添加按钮 */
+.simplePic .add{
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width:100%;
+    height:302rpx;
+    margin-bottom:20rpx;
+    background:#fff;
+}
+.simplePic .add .add-box{
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    width:100%;
+    height:100%;
+    border:1rpx dashed #ccc;
+}
+.simplePic .add .add-box .addmark{
+    font-size:100rpx;
+    color:#ccc;
+}
+.simplePic .add .add-box .scale{
+    font-size:24rpx;
+    color:#ccc;
+}
+
+.simplePic .add image{
+    width:100%;
+    height:100%;
+}

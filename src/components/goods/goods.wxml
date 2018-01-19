@@ -1,0 +1,19 @@
+<view class="goods-component type-{{itemData.listTyle}}" style="background-color: {{itemData.bgColor}}">
+  <block wx:for="{{itemData.data}}" wx:key="index">
+    <view class="good-item">
+      <view class="img-wrapper">
+        <view wx:if="{{itemData.isTag}}" class="tag" style="background-color: {{itemData.tagColor}}; color: {{itemData.tagFontColor}};">{{itemData.tagName}}</view>
+        <image mode="aspectFill" src="{{item.path}}" style="{{item.path?'':'background-color:#ddd;'}}"></image>
+      </view>
+      <view class="content-wrapper">
+        <view class="name">{{item.name || '商品名称'}}</view>
+        <view wx:if="{{itemData.isSellingPoints}}" class="points" style="{{itemData.isPrice?'':'padding-top:24rpx;padding-bottom:24rpx;'}}">{{item.SellingPoints || '商品卖点'}}</view>
+        <view wx:if="{{itemData.isPrice}}" class="price" style="color: {{itemData.priceColor}}">￥{{item.SalePrice}}</view>
+        <view wx:if="{{itemData.btnType > 0}}" class="btn btn-{{itemData.btnType}}">
+          <view wx:if="{{itemData.btnType == 3}}" style="color: {{itemData.btnFontColor}};">buy</view>
+          <view wx:if="{{itemData.btnType == 4}}" style="background-color: {{itemData.btnColor}}; color: {{itemData.btnFontColor}};">{{itemData.btnText}}</view>
+        </view>
+      </view>
+    </view>
+  </block>
+</view>

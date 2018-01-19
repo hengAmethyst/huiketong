@@ -1,0 +1,12 @@
+<view class="map">
+    <view class="toggle">
+        <text class="word">是否显示地图位置</text>
+        <switch checked="{{itemData.status}}}" bindchange="change"/>
+    </view>
+    <view class="title">
+        <view class="left">
+            <text class="name">地图位置</text>
+        </view>
+        <sort itemIndex="{{itemIndex}}" bindupdate="update" gData="{{gData}}"></sort>
+    </view>
+</view>

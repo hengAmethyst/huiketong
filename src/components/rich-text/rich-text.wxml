@@ -1,0 +1,3 @@
+<view class="rich-text-component" style="background-color: {{itemData.bgColor}}; padding: {{itemData.padding*2}}rpx">
+    <rich-text nodes="{{nodes}}"></rich-text>
+</view>

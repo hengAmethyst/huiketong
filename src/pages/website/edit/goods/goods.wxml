@@ -1,0 +1,28 @@
+<view class="goods">
+    <view class="title">
+        <view class="left">
+            <text class="name">商品</text>
+        </view>
+        <sort itemIndex="{{itemIndex}}" bindupdate="update" gData="{{gData}}"></sort>
+    </view>
+    <!-- add-btn -->
+    <view class="add" bindtap="upload">
+       
+        <image src="{{gData[itemIndex].url}}" wx:if="{{gData[itemIndex].url}}"></image>
+        <view class="add-btn" wx:else>
+            <view class="add-btn-box">
+                <text class="addmark">+</text>
+                <text class="scale">240*240</text>
+            </view>
+        </view>
+    </view>
+    <!-- 输入区域 -->
+    <view class="input-area">
+        <view class="name">
+            <input type="text" value="{{gData[itemIndex].title}}" placeholder="请输入标题" bindinput="endInputTitle"/>
+        </view>
+        <view class="content">
+            <textarea value="{{gData[itemIndex].content}}" placeholder="开始书写" bindinput="endInputContent"></textarea>
+        </view>
+    </view>
+</view>

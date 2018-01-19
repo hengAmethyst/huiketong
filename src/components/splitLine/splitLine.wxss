@@ -1,0 +1,6 @@
+.split-line{
+    width:100%;
+}
+.split-line .line{
+    width:100%;
+}

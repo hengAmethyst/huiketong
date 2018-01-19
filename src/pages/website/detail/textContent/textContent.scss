@@ -1,0 +1,18 @@
+.text-wrappe {
+  margin-bottom: 30rpx;
+  width: 690rpx;
+  padding-bottom: 30rpx;
+  border-bottom: 1rpx solid #ccc;
+  .text-title {
+    margin-bottom: 25rpx;
+    font-size: 36rpx;
+    line-height: 50rpx;
+    color: #222;
+    font-weight: 600;
+  }
+  .text-desc {
+    line-height: 40rpx;
+    font-size: 26rpx;
+    color: #63666b;
+  }
+}

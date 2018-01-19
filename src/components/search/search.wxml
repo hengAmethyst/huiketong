@@ -1,0 +1,6 @@
+<view class="search">
+      <view class="search-box" style="{{itemData.nowSty}}">
+        <image class="search-img" src="{{itemData.searchImg}}"/>
+        <view class="tip-words">{{itemData.tipText}}</view>
+      </view>
+  </view>

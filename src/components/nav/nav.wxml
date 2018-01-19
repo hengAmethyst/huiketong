@@ -1,0 +1,6 @@
+<view class="nav-component" style="background-color: {{itemData.bgColor}}">
+  <view class="box-item {{itemData.border?'show-border':''}}" wx:for="{{itemData.data}}" wx:key="index" style="width: {{100 / itemData.column}}%; padding: {{itemData.padding_top * 2}}rpx 0 {{itemData.padding_bottom * 2}}rpx">
+    <image src="{{item.path}}" style="width:{{itemData.box_width*2}}rpx; height:{{itemData.box_width*2}}rpx; {{itemData.borderRadius?'border-radius:50%;':''}}"></image>
+    <view class="label">{{item.name}}</view>
+  </view>
+</view>

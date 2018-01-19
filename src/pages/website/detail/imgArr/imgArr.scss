@@ -1,0 +1,11 @@
+.img-arr-wrapper {
+  .img-item {
+    margin-right: 24rpx;
+    margin-bottom: 24rpx;
+    width: 214rpx;
+    height: 214rpx;
+    &:nth-child(3n) {
+      margin-right: 0;
+    }
+  }
+}

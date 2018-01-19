@@ -1,0 +1,514 @@
+<template>
+  <view class="user-info">
+    <view class="logo-wrapper">
+      <image @tap="handleUpload('logo')" class="logo" hidden="{{!logo}}" src="{{logo}}"></image>
+      <image @tap="handleUpload('logo')" src="../../../img/icon_logo_default.png" hidden="{{logo}}" class="logo-icon"></image>
+      <view @tap="handleUpload('logo')" class="logo empty {{avatar ? 'small' : ''}}">
+        <view class="camera-icon" hidden="{{!avatar}}"></view>
+      </view>
+    </view>
+    <view class="shop-name">{{shopName}}</view>
+
+    <view class="form">
+      <form @submit="handleFormSubmit">
+        <view class="form-item">
+          <view class="label">店铺名称</view>
+          <input name="shopName" value="{{initData.shopName}}" placeholder="请填写" placeholder-class="input-placeholder" confirm-type="next" focus="{{fcShopName}}" @input="handleInput('shopName')" @blur="handleInputBlur('shopName')" @confirm="handleInputConfirm('shopName')" />
+        </view>
+        <view class="form-item shop-address-item">
+          <view class="label">店铺地址</view>
+          <input name="shopAddress" value="{{initData.shopAddress}}" placeholder="请填写" placeholder-class="input-placeholder" confirm-type="next" focus="{{fcShopAddress}}" @input="handleInput('shopAddress')" @blur="handleInputBlur('shopAddress')" @confirm="handleInputConfirm('shopAddress')" />
+        </view>
+        <view class="form-item">
+          <view class="label">负责人</view>
+          <input name="shopPrincipal" value="{{initData.shopPrincipal}}" placeholder="法人或对接人姓名" placeholder-class="input-placeholder" confirm-type="next" focus="{{fcShopPrincipal}}" @input="handleInput('shopPrincipal')" @blur="handleInputBlur('shopPrincipal')" @confirm="handleInputConfirm('shopPrincipal')" />
+        </view>
+        <view class="form-item phone-item">
+          <view class="label">联系电话</view>
+          <input name="phone" value="{{initData.phone}}" placeholder="请填写" placeholder-class="input-placeholder" maxlength="11" type="number" confirm-type="next" focus="{{fcPhone}}" @input="handleInput('phone')" @blur="handleInputBlur('phone')" @confirm="handleInputConfirm('phone')" />
+        </view>
+        <view class="form-item image-item">
+          <view class="label">图片上传</view>
+          <view class="image-item-content">
+            <view class="image-wrapper">
+              <view hidden="{{license}}" class="image-uploader" @tap="handleUpload('license')">
+                <view class="plus-icon"></view>
+                <view class="desc">营业执照</view>
+              </view>
+              <image hidden="{{!license}}" src="{{license}}" @tap="handleUpload('license')"></image>
+            </view>
+            <view class="image-wrapper">
+              <view hidden="{{avatar}}" class="image-uploader" @tap="handleUpload('avatar')">
+                <view class="plus-icon"></view>
+                <view class="desc">门头照</view>
+              </view>
+              <image hidden="{{!avatar}}" src="{{avatar}}" @tap="handleUpload('avatar')"></image>
+            </view>
+          </view>
+        </view>
+
+        <view class="action">
+          <button class="confirm-btn" form-type="submit">完成</button>
+        </view>
+      </form>
+    </view>
+
+    <toast />
+  </view>
+</template>
+
+<script>
+import wepy from "wepy";
+import ApiUrl from "@/api-url";
+import * as Tool from "@/tool";
+import Toast from "wepy-com-toast";
+
+export default class UserInfo extends wepy.page {
+  components = {
+    toast: Toast
+  };
+
+  config = {
+    navigationBarTitleText: "编辑资料"
+  };
+
+  data = {
+    gettingCode: false, // 是否正在获取验证码
+    remainingTime: 0, // 剩余秒数
+
+    fcShopName: false,
+    fcShopAddress: false,
+    fcShopPrincipal: false,
+    fcPhone: false,
+    fcVerificationCode: false, // 设置验证码输入框获取焦点
+
+    logo: "",
+    shopName: "",
+    shopAddress: "",
+    shopPrincipal: "",
+    phone: "",
+    verificationCode: "",
+    license: "",
+    avatar: "",
+
+    initData: {
+      shopName: "",
+      shopAddress: "",
+      shopPrincipal: "",
+      phone: ""
+    },
+
+    inputList: [
+      "shopName",
+      "shopAddress",
+      "shopPrincipal",
+      "phone"
+    ]
+  };
+
+  computed = {
+    /** 获取验证码按钮文字 */
+    getCodeBtnText() {
+      if (this.remainingTime > 0) {
+        return this.remainingTime + "s";
+      } else {
+        return "获取";
+      }
+    }
+  };
+
+  methods = {
+    async handleGetCode() {
+      if (!this.checkPhone()) {
+        return;
+      }
+
+      if (this.gettingCode) {
+        return;
+      }
+      this.gettingCode = true;
+      this.fcVerificationCode = true;
+
+      Tool.requestVerificationCode(this.phone);
+
+      this.remainingTime = 60;
+      while (this.remainingTime > 0) {
+        this.$apply();
+        await Tool.sleep(1000);
+        this.remainingTime--;
+      }
+
+      this.gettingCode = false;
+      this.$apply();
+    },
+    handleInput(name, ev) {
+      this[name] = ev.detail.value;
+    },
+    handleInputConfirm(name) {
+      let index = this.inputList.indexOf(name);
+      if (index + 1 < this.inputList.length) {
+        let nextName = this.inputList[index + 1];
+        let propName = "fc" + nextName[0].toUpperCase() + nextName.substring(1);
+        this[propName] = true;
+      }
+    },
+    handleInputBlur(name) {
+      let propName = "fc" + name[0].toUpperCase() + name.substring(1);
+      this[propName] = false;
+    },
+    async handleUpload(name) {
+      try {
+        let img = await wepy.chooseImage({ count: 1 });
+        let file = await wepy.uploadFile({
+          url: ApiUrl.file,
+          filePath: img.tempFilePaths[0],
+          name: "file"
+        });
+
+        let res = JSON.parse(file.data);
+        if (res.code > 0) {
+          throw res.msg;
+        }
+        this[name] = res.data.fullFilename;
+        this.$apply();
+      } catch (e) {
+        console.log("e", e);
+      }
+    },
+    async handleFormSubmit() {
+      if (!this.checkFields() || !this.checkPhone()) {
+        return;
+      }
+
+      let token = this.$parent.globalData.nowToken;
+      let companyId = this.$parent.globalData.companyId;
+      let userId = this.$parent.globalData.userId;
+
+      let param = {
+        id: companyId || undefined,
+        userId,
+        companyName: this.shopName,
+        address: this.shopAddress,
+        head: this.shopPrincipal,
+        mobile: this.phone,
+        logo: this.logo,
+        avatar: this.avatar,
+        license: this.license,
+        verificationCode: "111111"
+      };
+
+      console.log("req param", param);
+
+      let res;
+      try {
+        res = await wepy.request({
+          url: ApiUrl.company.improve,
+          data: Tool.genReqBody(param, token),
+          method: "POST"
+        });
+      } catch (e) {
+        console.log("e", e);
+        this.showToast({ title: "网络连接不上" });
+        return;
+      }
+
+      if (res.data.code === 0) {
+        this.$parent.globalData.companyId = res.data.data.id;
+        wepy.showToast({ title: "保存成功" });
+      } else {
+        this.showToast({ title: res.data.showMsg });
+      }
+    }
+  };
+
+  checkPhone() {
+    if (!this.phone || !/^1\d{10}$/.test(this.phone)) {
+      this.fcPhone = true;
+      this.showToast({ title: "手机号码错误" });
+      return false;
+    }
+    return true;
+  }
+
+  checkFields() {
+    let msg = "";
+
+    if (!this.shopName) msg = "店铺名称必填";
+    else if (this.shopName.length > 20) msg = "店铺名称最长 20 字";
+    else if (!this.shopAddress) msg = "店铺地址必填";
+    else if (this.shopAddress.length > 40) msg = "店铺地址最长 40 字";
+    else if (!this.shopPrincipal) msg = "负责人必填";
+    else if (!this.phone) msg = "联系电话必填";
+    else if (!this.license) msg = "营业执照未上传";
+    else if (!this.avatar) msg = "门头照未上传";
+
+    if (msg) {
+      this.showToast({ title: msg });
+      return false;
+    }
+    return true;
+  }
+
+  showToast({ title }) {
+    this.$invoke("toast", "show", {
+      title
+    });
+  }
+
+  onLoad(options) {
+    console.log("userInfo");
+    console.log("options", options, "globalData", this.$parent.globalData);
+    let companyId = this.$parent.globalData.companyId;
+
+    if (companyId) {
+      let reqData = {
+        url: ApiUrl.company.queryCompanyInfo,
+        data: Tool.genReqBody({ companyId }),
+        method: "POST"
+      };
+
+      wepy.request(reqData).then(
+        res => {
+          if (res.data.code === 0) {
+            let data = res.data.data;
+
+            this.shopName = data.companyName;
+            this.shopAddress = data.address;
+            this.shopPrincipal = data.head;
+            this.phone = data.mobile;
+            this.logo = data.logo;
+            this.avatar = data.avatar;
+            // this.avatar = "";
+            this.license = data.license;
+
+            this.initData.shopName = this.shopName;
+            this.initData.shopAddress = this.shopAddress;
+            this.initData.shopPrincipal = this.shopPrincipal;
+            this.initData.phone = this.phone;
+
+            this.$apply();
+          } else {
+            this.showToast({ title: res.data.showMsg });
+          }
+        },
+        err => {
+          this.showToast({ title: "网络连接不上" });
+        }
+      );
+    }
+  }
+}
+</script>
+
+<style lang="scss">
+.input-placeholder {
+  font-size: 32rpx;
+  color: #cccccc;
+}
+
+.user-info {
+  padding-top: 48rpx;
+
+  .logo-wrapper {
+    position: relative;
+    width: 150rpx;
+    height: 150rpx;
+    margin: 0 auto;
+    .logo-icon {
+      position: absolute;
+      z-index: 1;
+      left: 0;
+      top: 0;
+      width: 150rpx;
+      height: 150rpx;
+    }
+    .logo {
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      &.empty {
+        background-color: #4487f8;
+        .camera-icon {
+          box-sizing: border-box;
+          width: 55rpx;
+          height: 46rpx;
+          position: absolute;
+          left: 50%;
+          top: 50%;
+          transform: translate(-50%, -50%);
+
+          color: #fff;
+          border: 4rpx solid;
+          border-radius: 4rpx;
+          &::before {
+            content: "";
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            width: 40%;
+            height: 48%;
+            border: 4rpx solid;
+            border-radius: 50%;
+          }
+          &::after {
+            content: "";
+            width: 0;
+            height: 0;
+            display: block;
+            position: absolute;
+            right: 10%;
+            top: 10%;
+            border: 2rpx solid;
+          }
+        }
+        &.small {
+          position: absolute;
+          bottom: -6rpx;
+          right: -3rpx;
+          width: 46rpx;
+          height: 46rpx;
+          .camera-icon {
+            width: 24rpx;
+            height: 20rpx;
+            border-width: 2rpx;
+            &::before,
+            &::after {
+              border-width: 2rpx;
+            }
+          }
+        }
+      }
+    }
+  }
+
+  .shop-name {
+    height: 50rpx;
+    padding: 0 130rpx;
+    margin-top: 24rpx;
+    margin-bottom: 67rpx;
+    font-size: 36rpx;
+    font-weight: 600;
+    text-align: center;
+    color: #222222;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    overflow: hidden;
+  }
+
+  .form {
+    box-sizing: border-box;
+    padding: 0 30rpx;
+    .form-item {
+      height: 95rpx;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      &.shop-address-item,
+      &.phone-item {
+        border-bottom: 1rpx solid rgba(204, 204, 204, 0.5);
+      }
+
+      .label {
+        width: 196rpx;
+        height: 95rpx;
+        line-height: 96rpx;
+        font-size: 28rpx;
+        color: #777777;
+      }
+
+      input {
+        flex-grow: 1;
+        font-size: 32rpx;
+        color: #222222;
+      }
+
+      .code-input-wrapper {
+        flex-grow: 1;
+        .code-input {
+          display: flex;
+          justify-content: space-between;
+
+          .get-code-btn {
+            width: 100rpx;
+            color: #008dff;
+            font-size: 32rpx;
+            line-height: 56rpx;
+            &.count-down {
+              color: #9aa2a7;
+            }
+          }
+        }
+      }
+
+      &.image-item {
+        display: block;
+        height: auto;
+        border-bottom: 0;
+        .image-item-content {
+          display: flex;
+          justify-content: space-between;
+          .image-wrapper {
+            width: 320rpx;
+            height: 240rpx;
+            .image-uploader {
+              width: 100%;
+              height: 100%;
+              border: 1rpx dashed #b9b9b9;
+              .plus-icon {
+                margin: 70rpx auto 0;
+                position: relative;
+                width: 44rpx;
+                height: 44rpx;
+                &::before,
+                &::after {
+                  position: absolute;
+                  background-color: #ccc;
+                  content: "";
+                }
+                &::before {
+                  width: 44rpx;
+                  height: 10rpx;
+                  top: 17rpx;
+                }
+                &::after {
+                  width: 10rpx;
+                  height: 44rpx;
+                  left: 17rpx;
+                }
+              }
+              .desc {
+                margin-top: 34rpx;
+                font-size: 26rpx;
+                color: #cccccc;
+                text-align: center;
+              }
+            }
+            image {
+              width: 100%;
+              height: 100%;
+            }
+          }
+        }
+      }
+    }
+  }
+
+  .action {
+    box-sizing: border-box;
+    height: 120rpx;
+    width: 100%;
+    padding: 17rpx 0 15rpx;
+    background-color: #fff;
+    margin-top: 48rpx;
+    .confirm-btn {
+      width: 650rpx;
+      height: 88rpx;
+      border-radius: 4rpx;
+      background-color: #4487f8;
+      font-size: 36rpx;
+      color: #ffffff;
+    }
+  }
+}
+</style>

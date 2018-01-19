@@ -1,0 +1,16 @@
+<view class="map">
+    <map 
+        id="map" 
+        longitude="{{itemData.local.longitude}}" 
+        style="{{itemData.nowSty}}" 
+        latitude="{{itemData.local.latitude}}"
+        scale="{{itemData.data.scale}}" 
+        controls="{{itemData.data.controls}}"
+        bindcontroltap="controltap" 
+        circles="{{itemData.data.circles}}"
+        markers="{{itemData.data.markers}}" 
+        bindmarkertap="markertap" 
+        bindregionchange="regionchange" 
+        show-location>
+    </map>
+</view>

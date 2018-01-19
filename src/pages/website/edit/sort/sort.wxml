@@ -1,0 +1,5 @@
+<view class="right">
+    <image class="img-down" src="/img/downArrow.png" bindtap="down"></image>
+    <image class="img-up" src="/img/upArrow.png" bindtap="up"></image>
+    <image class="img-del" src="/img/icon_delete_word.png" bindtap="del"></image>
+</view>

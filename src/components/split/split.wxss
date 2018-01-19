@@ -1,0 +1,28 @@
+.split{
+    display:flex;
+    justify-content: center;
+    align-items:center;
+    width:100%;
+    height:60rpx;
+    background:#fff;
+}
+.split .left-line{
+    width:80rpx;
+    height:3rpx;
+    background:#000;
+}
+.split .right-line{
+    width:80rpx;
+    height:3rpx;
+    background:#000;
+}
+.split .content{
+    display: inline-block;
+    text-align: center;
+    width:360rpx;
+    font-size:26rpx;
+    font-weight: bold;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}

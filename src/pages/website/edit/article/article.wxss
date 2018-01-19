@@ -1,0 +1,78 @@
+.article{
+    width:750rpx;
+    margin-top:10rpx;
+    background:#fff;
+}
+/* 头部 */
+.article .title{
+    display: flex;
+    justify-content: space-between;
+    width:690rpx;
+    height:107rpx;
+    margin:0 auto;
+    margin-bottom:20rpx;
+    background:#fff;
+    border-bottom: 1rpx solid #ccc;
+}
+.article .title .left{
+    display: flex;
+    align-items: center;
+    height:100%;
+}
+.article .title .left .name{
+    font-size:32rpx;
+    font-weight: bold;
+    color:#222;
+}
+.article .title .left .scale{
+    margin-left:48rpx;
+    font-size:24rpx;
+    color:#ccc;
+}
+
+.article .title .right{
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width:250rpx;
+    height:100%;
+}
+.article .title .right .img-down{
+    width:34.9rpx;
+    height:34rpx;
+}
+.article .title .right .img-up{
+    width:34.9rpx;
+    height:34rpx;
+}
+.article .title .right .img-del{
+    width:36rpx;
+    height:40rpx;
+}
+/* 输入区域 */
+.article .input-area{
+    width:100%;
+    height:400rpx;
+}
+.article .input-area .title{
+    width:660rpx;
+    height:105rpx;
+}
+.article .input-area .title input{
+    width:100%;
+    height:100%;
+    font-weight: 600;
+    font-size:32rpx;
+    color:#282828;
+}
+.article .input-area .content{
+    margin:0 auto;
+    width:660rpx;
+    height:270rpx;
+}
+.article .input-area .content textarea{
+    width:100%;
+    height:100%;
+    font-size:28rpx;
+    color:#282828;
+}

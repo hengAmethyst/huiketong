@@ -1,0 +1,30 @@
+.navigation-component {
+    margin-bottom: 10rpx;
+    background-color: #fff;
+    border: 1px solid rgb(238, 238, 238);
+    border-radius: 8rpx;
+    display: flex;
+    justify-content: space-around;
+
+    .box-item {
+        box-sizing: border-box;
+        width: 25%;
+        padding: 20rpx 0 20rpx;
+        image {
+            display: block;
+            margin: 0 auto;
+            width: 120rpx;
+            height: 120rpx;
+            border-radius: 50%;
+        }
+        .label {
+            margin-top: 10rpx;
+            text-align: center;
+            font-size: 24rpx;
+            line-height: 40rpx;
+            white-space: nowrap;
+            text-overflow: ellipsis;
+            overflow: hidden;
+        }
+    }
+}

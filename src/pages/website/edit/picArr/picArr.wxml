@@ -1,0 +1,19 @@
+<view class="imgs">
+    <view class="title">
+        <view class="left">
+            <text class="name">图片组</text>
+        </view>
+        <sort itemIndex="{{itemIndex}}" bindupdate="update" gData="{{gData}}"></sort>
+    </view>
+    <!-- 添加图片 -->
+    <view class="add">
+        <view class="img-content" wx:for="{{gData[itemIndex].webTemplatePicList}}">
+            <image src ="{{item.url}}" class="common-img"></image>
+            <image src="/img/icon_delete_pic.png" class="icon-del" data-index="{{index}}" bindtap="delPic"></image>
+        </view>
+        <view class="add-box" wx:if="{{gData[itemIndex].webTemplatePicList.length<6}}" bindtap="chooseImg">
+            <text class="addmark">+</text>
+            <text class="scale">214*214</text>
+        </view>
+    </view>
+</view>

@@ -1,0 +1,355 @@
+<template>
+  <view class="shop clearfix">
+    <!-- 商城类 -->
+    <block wx:for="{{componentData}}" wx:key="index" wx:if="{{shopTemplate}}">
+      <picture itemData="{{item}}" wx:if="{{item.type === 'picture'}}"></picture>
+      <pictureArr itemData="{{item}}" wx:if="{{item.type === 'pictureArr'}}"></pictureArr>
+      <swiper itemData="{{item}}" wx:if="{{item.type === 'swiper'}}"></swiper>
+      <goods wx:if="{{item.type == 'goods'}}" itemData="{{item}}"></goods>
+      <nav wx:if="{{item.type == 'nav'}}" itemData="{{item}}"></nav>
+      <richText wx:if="{{item.type == 'richText'}}" itemData="{{item}}"></richText>
+      <map wx:if="{{item.type == 'vuemap'}}" itemData="{{item}}"></map>
+      <video wx:if="{{item.type == 'video'}}" itemData="{{item}}"></video>
+      <search wx:if="{{item.type == 'searchBox'}}" itemData="{{item}}"></search>
+      <blank wx:if="{{item.type == 'blank'}}" itemData="{{item}}"></blank>
+      <kefu wx:if="{{item.type == 'customService'}}" itemData="{{item}}"></kefu>
+      <splitLine wx:if="{{item.type == 'splitLine'}}" itemData="{{item}}"></splitLine>
+      <phone wx:if="{{item.type == 'phoneBox'}}" itemData="{{item}}"></phone>
+    </block>
+    <!-- 高级展示类 -->
+    <block wx:for="{{componentData}}" wx:key="index" wx:if="{{shopBzTplContent}}">
+      <banner wx:if="{{item.preview.type == 'banner'}}" itemData="{{item}}"></banner>
+      <content wx:if="{{item.preview.type == 'content'}}" itemData="{{item}}"></content>
+      <navigation wx:if="{{item.preview.type == 'navigation'}}" itemData="{{item}}"></navigation>
+      <article wx:if="{{item.preview.type == 'article'}}" itemData="{{item}}"></article>
+      <split wx:if="{{item.preview.type == 'split'}}" itemData="{{item}}"></split>
+      <s_video wx:if="{{item.preview.type == 'video'}}" itemData="{{item}}"></s_video>
+    </block>
+  </view>
+
+  <view class="blank" wx:if="{{!noShare}}"></view>
+
+  <!-- 底部按钮 -->
+  <view class="foot-btn" wx:if="{{!noShare}}">
+    <button class="share-btn" open-type="share" wx:if="{{ifShare}}">分享</button>
+    <button class="share-btn" @tap.stop="showActionSheet" wx:else>分享</button>
+  </view>
+
+  <!-- 显示actionSheet-->
+  <view class="share-action-sheet {{showShare ? 'active' : '' }}" wx:if="{{!noShare}}">
+    <button class="share-btn btn share" open-type="share">分享给微信好友</button>
+    <view class="share-btn btn" @tap="toQrCode">生成小程序码</view>
+    <view class="cancel-btn btn" @tap="toCancel">取消</view>
+  </view>
+  <toast />
+</template>
+
+<script>
+import wepy from "wepy";
+import ApiUrl from "@/api-url";
+import * as Tool from "@/tool";
+import Toast from "wepy-com-toast";
+
+export default class Custom extends wepy.page {
+  components = {
+    toast: Toast
+  };
+
+  config = {
+    usingComponents: {
+      picture: "../../../components/picture/picture",
+      pictureArr: "../../../components/pictureArr/pictureArr",
+      swiper: "../../../components/swiper/swiper",
+      goods: "/components/goods/goods",
+      nav: "/components/nav/nav",
+      richText: "/components/rich-text/rich-text",
+      blank: "/components/blank/blank",
+      kefu: "/components/kefu/kefu",
+      phone: "/components/phone/phone",
+      search: "/components/search/search",
+      splitLine: "/components/splitLine/splitLine",
+      video: "/components/video/video",
+      map: "/components/map/map",
+      banner: "/components/banner/banner",
+      content: "/components/content/content",
+      navigation: "/components/navigation/navigation",
+      article: "/components/article/article",
+      split: "/components/split/split",
+      s_video: "/components/s_video/s_video"
+    }
+  };
+
+  data = {
+    id: "",
+    sId: "",
+    ifShare: false,
+    componentData: [],
+    shopTemplate: false,
+    shopBzTplContent: false,
+    // 显示actionSheet
+    showShare: false,
+    // 不需要底部的分享按钮
+    noShare: false
+  };
+
+  methods = {
+    /**
+    * 显示actionSheet
+     */
+    showActionSheet() {
+      this.showShare = true;
+    },
+    /**
+     * 关闭actionSheet
+      */
+    toCancel() {
+      this.showShare = false;
+    },
+    /**
+    * 生成小程序码
+     */
+    toQrCode() {
+      this.fetchQrCode().then(data => {
+        wepy.previewImage({
+          urls: [data] // 需要预览的图片http链接列表
+        });
+      });
+    },
+    /**
+    * 转发事件
+     */
+    onShareAppMessage(res) {
+      if (res.from === "button") {
+        // 来自页面内转发按钮
+        console.log(res.target);
+      }
+      return {
+        title: "新乐汇汇客通",
+        path: `/pages/website/shop/shop?id=${this.id}&shopId=${this
+          .sId}&share=0`,
+        success: res => {
+          // 关闭actionSheet
+          this.showShare = false;
+          this.statisticalData(1);
+        },
+        fail: res => {
+          // 转发失败
+        }
+      };
+    }
+  };
+
+  /**
+   * 获取小程序码
+   */
+  fetchQrCode() {
+    let param = {
+      companyId: this.$parent.globalData.companyId,
+      userId: this.$parent.globalData.userId,
+      appId: 5,
+      sceneStr: this.id + "/" + this.sId,
+      pagePath: "pages/website/shop/shop"
+    };
+    return wepy
+      .request({
+        url: ApiUrl.access.qrCode,
+        data: Tool.genReqBody(param, this.$parent.globalData.nowToken),
+        method: "POST"
+      })
+      .then(
+        res => {
+          console.log(res);
+          let response = res.data;
+          if (response.code === 0) {
+            return response.data.miniQrUrl;
+          } else {
+            wx.showToast({
+              title: response.showMsg,
+              image: "../../../img/error.png",
+              duration: 2000
+            });
+          }
+        },
+        err => {
+          wx.showToast({
+            title: "请求数据失败",
+            image: "../../../img/error.png",
+            duration: 2000
+          });
+        }
+      );
+  }
+
+  showToast({ title }) {
+    this.$invoke("toast", "show", {
+      title
+    });
+  }
+
+  /**
+   * 统计数据
+   */
+  statisticalData(type) {
+    let param = {
+      companyId: this.id,
+      type: type,
+      searchDate: new Date()
+    };
+    return wepy
+      .request({
+        url: ApiUrl.count,
+        data: Tool.genReqBody(param, this.token),
+        method: "POST"
+      })
+      .then(
+        res => {
+          console.log(res);
+        },
+        err => {
+          console.log(err);
+        }
+      );
+  }
+
+  onLoad(options) {
+    if (options.demo) {
+      this.noShare = true;
+    }
+    let newTplId;
+    let shopId;
+
+    if (options.id) {
+      this.id = options.id;
+      this.sId = options.shopId;
+      newTplId = options.id;
+      shopId = options.shopId;
+      if (options.share) {
+        this.ifShare = true;
+        this.statisticalData(2);
+      }
+      this.$apply();
+    } else {
+      let scene = decodeURIComponent(options.scene);
+      this.id = scene.split("/")[0];
+      this.sId = scene.split("/")[1];
+      newTplId = scene.split("/")[0];
+      shopId = scene.split("/")[1];
+      this.ifShare = true;
+      this.statisticalData(2);
+      this.$apply();
+    }
+
+    let token = this.$parent.globalData.nowToken;
+
+    let reqData = {
+      url: ApiUrl.shop.queryShopTemplate,
+      data: Tool.genReqBody({ newTplId, shopId }, token),
+      method: "POST"
+    };
+
+    return wepy.request(reqData).then(
+      res => {
+        if (res.data.code === 0) {
+          if (res.data.data.shopBzTplContent) {
+            this.componentData = res.data.data.shopBzTplContent;
+            // console.log(this.componentData);
+            this.shopBzTplContent = true;
+          } else if (res.data.data.shopTemplate) {
+            if (res.data.data.shopTemplate.pages.length > 0) {
+              let tpl = JSON.parse(res.data.data.shopTemplate.pages[0].tpl);
+              this.componentData = tpl;
+              this.shopTemplate = true;
+            } else {
+              this.showToast({ title: "模板为空，请至云平台编辑模板" });
+              Tool.sleep(1500).then(() => {
+                wepy.navigateBack();
+              });
+            }
+          }
+          this.$apply();
+        } else {
+          this.showToast({ title: res.data.showMsg });
+          Tool.sleep(1500).then(() => {
+            wepy.navigateBack();
+          });
+        }
+      },
+      err => {
+        this.showToast({ title: "网络连接不上" });
+      }
+    );
+  }
+}
+</script>
+
+<style lang="scss" scoped>
+.shop {
+  width: 100%;
+  // clear: both;
+  // height: 100%;
+  // background: rgba(0, 0, 0, 0.2);
+  font-size: 0;
+}
+.clearfix::after {
+  content: ".";
+  display: block;
+  height: 0;
+  clear: both;
+  visibility: hidden;
+}
+.blank {
+  width: 750rpx;
+  height: 130rpx;
+}
+.foot-btn {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  box-sizing: border-box;
+  padding: 20rpx 40rpx;
+  display: flex;
+  flex-direction: row;
+  width: 750rpx;
+  height: 130rpx;
+  background-color: rgba(255, 255, 255, 0.9);
+  border-top: 1rpx solid #ddd;
+  z-index: 20;
+  transition: all 0.5s ease;
+  .share-btn {
+    width: 100%;
+    background-color: #4487f8;
+    color: #fff;
+    &::after {
+      border-color: #4487f8;
+    }
+  }
+}
+.share-action-sheet {
+  width: 750rpx;
+  position: fixed;
+  bottom: 0;
+  z-index: 30;
+  border: 1rpx solid #ccc;
+  transform: translateY(366rpx);
+  transition: all 0.3s ease;
+  &.active {
+    transform: translateY(0rpx);
+    transition: all 0.3s ease;
+  }
+  .btn {
+    height: 120rpx;
+    line-height: 120rpx;
+    background: #fff;
+    font-size: 36rpx;
+    text-align: center;
+    color: #222;
+    border-radius: 0;
+    &.share-btn {
+      border-bottom: 1rpx solid #ccc;
+    }
+    &.share::after {
+      border: none;
+    }
+  }
+}
+</style>

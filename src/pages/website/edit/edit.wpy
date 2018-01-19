@@ -1,0 +1,545 @@
+<template>
+  <view class="edit">
+    <scroll-view scroll-y class="scroll-area">
+      <!--轮播图-->
+      <view class="edit-lunbo">
+        <view class="title">
+          <text>轮播图</text>
+        </view>
+        <view class="add">
+          <view class="pic" wx:for="{{lunBoList}}">
+            <image src="{{item.url}}" class="img" />
+            <image src='../../../img/icon_delete_pic.png' class="delBtn" data-id="{{index}}" bindtap="deleteLunBo" />
+          </view>
+          <view class="addBtn" bindtap="chooseLunBo" wx:if="{{lunBoList.length<3}}">
+            <text class="addmark">+</text>
+            <text class="scale">750*1076</text>
+          </view>
+        </view>
+      </view>
+      <!-- 组件展示 -->
+      <block wx:for="{{editData.templateInfoDTOList}}" wx:key="{{index}}">
+        <!-- 图片组 -->
+        <picArr bindupdate="update" gData="{{editData.templateInfoDTOList}}" data-index="{{index}}" itemIndex="{{index}}" wx:if="{{item.infoType === 1}}"></picArr>
+        <!-- 文本段落 -->
+        <article bindupdate="update" gData="{{editData.templateInfoDTOList}}" data-index="{{index}}" itemIndex="{{index}}" wx:if="{{item.infoType === 2}}"></article>
+        <!-- 商品 -->
+        <goods bindupdate="update" gData="{{editData.templateInfoDTOList}}" data-index="{{index}}" itemIndex="{{index}}" wx:if="{{item.infoType === 3}}"></goods>
+        <!-- 单图 -->
+        <simplePic bindupdate="update" gData="{{editData.templateInfoDTOList}}" data-index="{{index}}" itemIndex="{{index}}" wx:if="{{item.infoType === 4}}"></simplePic>
+
+      </block>
+    </scroll-view>
+    <view class="add-btn-arr-box">
+      <view class="add-btn-arr">
+        <view class="add-article" bindtap="addSome" data-index={{0}}>
+          <image src="/img/icon_add_article.png"/>
+          <text>+段落</text>
+        </view>
+        <view class="add-pic" bindtap="addSome" data-index={{1}}>
+          <image src="/img/icon_add_pic.png"/>
+          <text>+图片</text>
+        </view>
+        <view class="add-pic-arr" bindtap="addSome" data-index={{2}}>
+          <image src="/img/icon_add_picArr.png"/>
+          <text>+图片组</text>
+        </view>
+        <view class="add-goods" bindtap="addSome" data-index={{3}}>
+          <image src="/img/icon_add_goods.png"/>
+          <text>+商品</text>
+        </view>
+      </view>
+    </view>
+    <!-- 完成按钮 -->
+    <view class="submit" bindtap="submit">
+      完成
+    </view>
+  </view>
+  <toast />
+</template>
+
+<script>
+import wepy from "wepy";
+//引入List、Panel和Counter组件
+import ApiUrl from "../../../api-url";
+import Toast from "wepy-com-toast";
+export default class edit extends wepy.page {
+  //页面配置
+  config = {
+    navigationBarTitleText: "模板编辑",
+    usingComponents: {
+      simplePic:'./simplePic/simplePic',
+      picArr:'./picArr/picArr',
+      article:'./article/article',
+      goods:'./goods/goods',
+      vMap:'./map/map'
+    }
+  };
+
+  //声明页面中将要使用到的组件
+  components = {
+    toast: Toast
+  };
+
+
+  //可用于页面模板中绑定的数据
+  data = {
+    logo: "../../../img/icon_logo_default.png",
+    id: null,
+    picList: [],
+    detailList: [],
+    lunBoList: [],
+    pictureList: [],
+    showContentEdit: false,
+    companyId: null,// 当前的id
+    showAddBtn: true, //显示不同的按钮.
+    editData: null,
+  };
+  onLoad() {
+    wx.hideLoading()
+    this.getOldInfo();
+    this.$apply()
+  }
+  methods = {
+    //选择轮播图
+    chooseLunBo() {
+      let that = this;
+      let type = 0;
+      wx.chooseImage({
+        count: that.lunBoList.length < 3 ? 3 - that.lunBoList.length : 0, // 默认9
+        success: function(res) {
+          let tempFilePaths = res.tempFilePaths;
+          let tempData = { nowNum: 0, allNum: tempFilePaths.length };
+          that.upload(tempData, that.lunBoList, tempFilePaths, type);
+        }
+      });
+    },
+    //选择图片
+    chooseImg() {
+      let that = this;
+      let type = 1;
+      wx.chooseImage({
+        count: that.pictureList.length < 6 ? 6 - that.pictureList.length : 0, // 默认9
+        success: function(res) {
+          let tempFilePaths = res.tempFilePaths;
+          let tempData = { nowNum: 0, allNum: tempFilePaths.length };
+          that.upload(tempData, that.pictureList, tempFilePaths, type);
+        }
+      });
+    },
+    //删除轮播图
+    deleteLunBo(e) {
+      this.lunBoList.splice(e.currentTarget.dataset.id, 1);
+    },
+    //删除图片
+    deletePic(e) {
+      this.pictureList.splice(e.currentTarget.dataset.id, 1);
+    },
+    // 添加段落
+    addSome(e){
+      let that = this
+      let index = e.currentTarget.dataset.index
+      let list = this.editData.templateInfoDTOList
+      switch (index) {
+        case 0: addArticle()
+          break;
+        case 1: addPic()
+          break;
+        case 2: addPicArr()
+          break;
+        case 3: addGoods()
+          break;
+      }
+      /**
+       * infotype:1,图片组
+       * infoType:2,段落
+       * infoType:3,商品
+       * infoType:4,单图
+       */
+      function addArticle() {
+        let count = nowCount(list,2)
+        if(count<10){
+          let param = {
+            "content": "",
+            "title":"",
+            "infoType": 2,
+          }
+          list.push(param)
+        }
+        else{
+          let title = '文章段落最多10个'
+          let img = "/img/icon_warn.png"
+          that.$invoke("toast", "show", {
+            title,
+            img
+          });
+        }
+      }
+      function addPic() {
+        let count = nowCount(list,4)
+        if(count<5){
+          let param = {
+            "infoType": 4,
+            "webTemplatePicList": []
+          }
+          list.push(param)
+        }
+        else{
+          let title = '单图最多5个'
+          let img = "/img/icon_warn.png"
+          that.$invoke("toast", "show", {
+            title,
+            img
+          });
+        }
+      }
+      function addPicArr() {
+        let count = nowCount(list,1)
+        console.log(count)
+        if(count<3){
+          let param = {
+            "infoType": 1,
+            "webTemplatePicList": []
+          }
+          list.push(param)
+        }
+        else{
+          let title = '图片组最多3个'
+          let img = "/img/icon_warn.png"
+          that.$invoke("toast", "show", {
+            title,
+            img
+          });
+        }
+      }
+      function addGoods() {
+        let count = nowCount(list,3)
+        if(count<5){
+          let param = {
+            "infoType": 3,
+            "title": "",
+            "content": "",
+            "webTemplatePicList": []
+          }
+          list.push(param)
+        }
+        else{
+          let title = '商品组件最多5个'
+          let img = "/img/icon_warn.png"
+          that.$invoke("toast", "show", {
+            title,
+            img
+          });
+        }
+      }
+      // 计算改组件的数量
+      function nowCount(list,type){
+        let count = 0
+        list.forEach(item =>{
+          if(item.infoType == type){
+            count++
+          }
+        })
+        return count
+      }
+    },
+    //完成提交
+    submit() {
+      let that = this;
+      let temp = [];
+      for (let item of this.lunBoList) {
+        temp.push(item);
+      }
+      for (let item of this.pictureList) {
+        temp.push(item);
+      }
+      wx.request({
+        url: ApiUrl.template.edit,
+        data: {
+          param:{
+            companyId:5,
+            id:this.editData.id,
+            templateInfoDTOList:this.editData.templateInfoDTOList,
+            templatePicList:this.editData.templatePicList
+          }
+        },
+        method: "POST",
+        header: {
+          "content-type": "application/json" // 默认值
+        },
+        success: function(res) {
+          if (res.data.code == 0) {
+            wx.showToast({
+              title: "编辑成功",
+              icon: "success",
+              duration: 1000
+            });
+            that.$root.$parent.globalData.changeDetail = true;
+            console.log(that.$root.$parent.globalData.changeDetail);
+            setTimeout(() => {
+              wx.navigateBack();
+            }, 1000);
+          } else {
+            console.log(res)
+            wx.showToast({
+              title: "提交失败",
+              icon: "error",
+              duration: 1000
+            });
+          }
+        }
+      });
+    }
+  }
+  // 用来接收子组件的数据
+  update(e){
+    let index = e.target.dataset.index
+    this.editData.templateInfoDTOList = e.detail
+    this.$apply()
+  }
+  // 多张图片上传函数
+  upload(picData, itemList, filePathList, type) {
+    let that = this;
+    wx.uploadFile({
+      url: ApiUrl.file, //仅为示例，非真实的接口地址
+      filePath: filePathList[picData.nowNum],
+      name: "file",
+      formData: {
+        user: "test"
+      },
+      success: function(res) {
+        let data = JSON.parse(res.data);
+        let temp = {};
+        temp.isTurnView = type;
+        temp.url = data.data.fullFilename;
+        itemList.push(temp);
+        that.$apply();
+        if (picData.nowNum < picData.allNum - 1) {
+          picData.nowNum++;
+          that.upload(picData, itemList, filePathList, type);
+        }
+      }
+    });
+  }
+
+  //输入标题
+  putTitle(e) {
+    let index = e.currentTarget.dataset.id;
+    this.detailList[index].title = e.detail.value;
+    this.$apply();
+  }
+  //输入内容
+  putInner(e) {
+    let index = e.currentTarget.dataset.id;
+    this.detailList[index].content = e.detail.value;
+    this.detailList[index].wordsLength = e.detail.value.length;
+    this.$apply();
+  }
+  //获取已有信息
+  getOldInfo() {
+    let that = this;
+    wx.request({
+      url: ApiUrl.template.query,
+      data: {
+        param: {
+          companyId: 5
+        }
+      },
+      method: "POST",
+      header: {
+        "content-type": "application/json" // 默认值
+      },
+      success: function(res) {
+        console.log(res)
+        that.editData = res.data.data.webTemplate
+        // 如果没有模板
+        if(!res.data.data.webTemplate.templateInfoDTOList){
+          that.editData.templateInfoDTOList = []
+        }
+        if(!res.data.data.webTemplate.templatePicList){
+          that.editData.templatePicList = []
+        }
+        else{
+          that.lunBoList = that.editData.templatePicList
+        }
+        that.$apply();
+      }
+    });
+  }
+}
+</script>
+<style lang="scss">
+.edit {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  height:100%;
+  background: #eaeff2;
+  /* 滚动区域 */
+  .scroll-area{
+    display: flex;
+    flex:1;
+    width:100%;
+    /*轮播*/
+    .edit-lunbo {
+      display: flex;
+      flex-direction: column;
+      width: 750rpx;
+      height: 334rpx;
+      margin-top: 3rpx;
+      background: #fff;
+      .title {
+        display: flex;
+        align-items: center;
+        width: 690rpx;
+        height: 107rpx;
+        margin: 0 auto;
+        border-bottom: solid 1rpx #cccccc;
+        text {
+          font-size: 32rpx;
+          font-weight: 600;
+          color: #222;
+        }
+        .scale{
+          margin-left:16rpx;
+          font-family: PingFangSC;
+          font-weight: 300;
+          font-size:24rpx;
+          color:#ccc;
+        }
+      }
+      .add {
+        display: flex;
+        align-items: center;
+        flex: 1;
+        .pic {
+          position: relative;
+          width: 154rpx;
+          height: 154rpx;
+          margin-left: 30rpx;
+          .img {
+            width: 100%;
+            height: 100%;
+          }
+          .delBtn {
+            position: absolute;
+            top: 0;
+            right: 0;
+            transform: translate(50%, -50%);
+            width: 31rpx;
+            height: 31rpx;
+          }
+        }
+        .addBtn {
+          display: flex;
+          flex-direction: column;
+          justify-content:center;
+          align-items: center;
+          width: 154rpx;
+          height: 154rpx;
+          margin-left: 25rpx;
+          border:1rpx dashed #ccc;
+          .addmark{
+            font-size:60rpx;
+            color:#ccc;
+          }
+          .scale{
+            font-size:20rpx;
+            color:#ccc;
+          }
+          image {
+            width: 154rpx;
+            height: 154rpx;
+          }
+        }
+      }
+    }
+  }
+  /* 按钮数组 */
+  .add-btn-arr-box{
+    width:100%;
+    height:129rpx;
+    background:#fff;
+    .add-btn-arr{
+      display:flex;
+      justify-content: space-between;
+      align-items: center;
+      margin: 0 auto;
+      width:630rpx;
+      height:100%;
+      .add-article{
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        width:100rpx;
+        image{
+          width:40rpx;
+          height:43rpx;
+        }
+        text{
+          margin-top:8rpx;
+          font-size:26rpx;
+          color:#a0a0a0;
+        }
+      }
+      .add-pic{
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        width:100rpx;
+        image{
+          width:50rpx;
+          height:42rpx;
+        }
+        text{
+          margin-top:8rpx;
+          font-size:26rpx;
+          color:#a0a0a0;
+        }
+      }
+      .add-pic-arr{
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        width:100rpx;
+        image{
+          width:50rpx;
+          height:43rpx;
+        }
+        text{
+          margin-top:8rpx;
+          font-size:26rpx;
+          color:#a0a0a0;
+        }
+      }
+      .add-goods{
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        width:100rpx;
+        image{
+          width:40rpx;
+          height:43rpx;
+        }
+        text{
+          margin-top:8rpx;
+          font-size:26rpx;
+          color:#a0a0a0;
+        }
+      }
+    }
+  }
+  /* 完成按钮 */
+  .submit{
+    display: flex;
+    justify-content: center;
+    align-items:center;
+    width:100%;
+    height:92rpx;
+    background:#4487f8;
+    font-size:36rpx;
+    color:#fff;
+  }
+}
+</style>

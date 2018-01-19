@@ -1,0 +1,6 @@
+<view class="navigation-component">
+  <view class="box-item" wx:for="{{itemList}}" wx:key="index">
+    <image src="{{item.url}}"></image>
+    <view class="label">{{item.title}}</view>
+  </view>
+</view>

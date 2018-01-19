@@ -1,0 +1,28 @@
+.nav-component {
+    &::after {
+        content: '';
+        clear: both;
+        display: block;
+    }
+    .box-item {
+        box-sizing: border-box;
+        float: left;
+        &.show-border {
+            border-right: 1px solid #d9d9d9;
+            border-bottom: 1px solid #d9d9d9;
+        }
+        image {
+            display: block;
+            margin: 0 auto;
+        }
+        .label {
+            margin-top: 10rpx;
+            text-align: center;
+            font-size: 24rpx;
+            line-height: 40rpx;
+            white-space: nowrap;
+            text-overflow: ellipsis;
+            overflow: hidden;
+        }
+    }
+}

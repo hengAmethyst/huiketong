@@ -1,0 +1,17 @@
+<view class="article">
+    <view class="title">
+        <view class="left">
+            <text class="name">文章段落</text>
+        </view>
+        <sort itemIndex="{{itemIndex}}" bindupdate="update" gData="{{gData}}"></sort>
+    </view>
+    <!-- 输入区域 -->
+    <view class="input-area">
+        <view class="title">
+            <input type="text" value="{{gData[itemIndex].title}}" bindinput="endInputTitle" placeholder="请输入标题" maxlength="40"/>
+        </view>
+        <view class="content">
+            <textarea placeholder="开始书写" value="{{gData[itemIndex].content}}" bindinput="endInputContent" maxlength="500"></textarea>
+        </view>
+    </view>
+</view>

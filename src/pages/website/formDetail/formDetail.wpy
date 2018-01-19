@@ -1,0 +1,104 @@
+<template>
+<view class="form-detail">
+  <view class="header">
+    <view class="title">{{info.name}}</view>
+    <view class="subtitle">{{info.phone}}</view>
+    <view class="date">{{info.createTime}}</view>
+  </view>
+  <view class="line"></view>
+  <view class="content">{{info.leaveWord}}</view>
+
+  <toast />
+</view>
+</template>
+
+<script>
+import wepy from "wepy";
+import ApiUrl from "@/api-url";
+import * as Tool from "@/tool";
+import Toast from "wepy-com-toast";
+
+export default class FormDetail extends wepy.page {
+    components = {
+    toast: Toast
+  };
+
+  config = {
+    navigationBarTitleText: '表单详情'
+  };
+
+  data = {
+    info: {},
+  };
+
+  onLoad(options) {
+    console.log(options);
+    let token = this.$parent.globalData.nowToken;
+    let param = options.id;
+    let reqData = {
+      url: ApiUrl.userCenter.formDetail,
+      data: Tool.genReqBody(param, token),
+      method: 'POST'
+    };
+    wepy.request(reqData)
+      .then(res => {
+        if (res.data.code === 0) {
+          this.info = res.data.data;
+          this.info.createTime = Tool.formatDateTime(this.info.createTime, 'YYYY-MM-DD');
+          this.$apply();
+        } else {
+          this.showToast({ title: res.data.showMsg });
+        }
+      }, err => {
+        this.showToast({ title: "网络连接不上" });
+      });
+  }
+
+  showToast({ title }) {
+    this.$invoke("toast", "show", {
+      title
+    });
+  }
+}
+</script>
+
+<style lang="scss">
+.form-detail {
+  box-sizing: border-box;
+  width: 100%;
+  height: 100%;
+  padding: 0 25rpx;
+  .header {
+    position: relative;
+    padding: 32rpx 30rpx 20rpx;
+    .title {
+      font-size: 38rpx;
+      font-weight: 500;
+      color: #222222;
+    }
+    .subtitle {
+      font-size: 30rpx;
+      font-weight: 500;
+      color: #222222;
+      margin-top: 10rpx;
+    }
+    .date {
+      position: absolute;
+      top: 32rpx;
+      right: 30rpx;
+      font-size: 26rpx;
+      color: #bcbcbc;
+    }
+  }
+  .line {
+    margin: 0 30rpx;
+    border-top: solid 1rpx rgba(204, 204, 204, 0.5);
+  }
+  .content {
+    padding: 21rpx 30rpx 0;
+    font-size: 28rpx;
+    line-height: 1.57;
+    color: #8b8f93;
+  }
+}
+</style>

@@ -1,0 +1,9 @@
+.s_video{
+    display: flex;
+    justify-content: center;
+    width:100%;
+    display: inline-block;
+}
+video{
+    width:100%;
+}

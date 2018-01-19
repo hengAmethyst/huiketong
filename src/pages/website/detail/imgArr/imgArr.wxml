@@ -1,0 +1,5 @@
+<view class="img-arr-wrapper">
+  <block wx:for="{{contentPicList}}" wx:key="index">
+    <image class="img-item" src="{{item.url}}" mode="aspectFill"/>
+  </block>
+</view>

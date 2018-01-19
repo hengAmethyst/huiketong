@@ -1,0 +1,3 @@
+<view class="kefu" style="{{itemData.nowSty}}">
+    <image src="{{itemData.img}}"/>
+</view>

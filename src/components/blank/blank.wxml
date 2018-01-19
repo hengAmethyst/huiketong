@@ -1,0 +1,1 @@
+<view class="blank" style="{{itemData.nowSty}}"></view>

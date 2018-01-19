@@ -1,0 +1,101 @@
+.imgs{
+    width:750rpx;
+    margin-top:10rpx;
+    background:#fff;
+}
+/* 头部 */
+.imgs .title{
+    display: flex;
+    justify-content: space-between;
+    width:690rpx;
+    height:107rpx;
+    margin:0 auto;
+    margin-bottom:20rpx;
+    background:#fff;
+    border-bottom: 1rpx solid #ccc;
+}
+.imgs .title .left{
+    display: flex;
+    align-items: center;
+    height:100%;
+}
+.imgs .title .left .name{
+    font-size:32rpx;
+    font-weight: bold;
+    color:#222;
+}
+.imgs .title .left .scale{
+    margin-left:48rpx;
+    font-size:24rpx;
+    color:#ccc;
+}
+
+.imgs .title .right{
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width:250rpx;
+    height:100%;
+}
+.imgs .title .right .img-down{
+    width:34.9rpx;
+    height:34rpx;
+}
+.imgs .title .right .img-up{
+    width:34.9rpx;
+    height:34rpx;
+}
+.imgs .title .right .img-del{
+    width:36rpx;
+    height:40rpx;
+}
+/* 添加图片 */
+.imgs .add{
+    display: flex;
+    flex-wrap: wrap;
+    margin:0 auto;
+    width:690rpx;
+    background:#fff;
+}
+.imgs .add .add-box{
+    display:flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    width:154rpx;
+    height:154rpx;
+    margin-bottom: 20rpx;
+    border:1rpx dashed #ccc;
+}
+.imgs .add .add-box .addmark{
+    font-size:80rpx;
+    color:#ccc;
+}
+.imgs .add .add-box .scale{
+    font-size:20rpx;
+    color:#ccc;
+}
+.imgs .add .img-content{
+    position:relative;
+    width:154rpx;
+    height:154rpx;
+    margin-right:70rpx;
+    margin-bottom:20rpx;
+}
+.imgs .add .img-content .common-img{
+    width:154rpx;
+    height:154rpx;
+}
+.imgs .add .img-content .icon-del{
+    position:absolute;
+    top:0;
+    right:0;
+    transform:translate(50%,-50%);
+    width:31rpx;
+    height:31rpx;
+}
+.imgs .add .add-btn{
+    width:154rpx;
+    height:154rpx;
+    margin-bottom:20rpx;
+}

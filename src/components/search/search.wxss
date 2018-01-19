@@ -1,0 +1,28 @@
+.search{
+        display: flex;
+        align-items: center;
+        width:100%;
+        height:90rpx;
+        background:#f9f9f9;
+
+
+}
+.search .search-box{
+    display:flex;
+    align-items:center;
+    width:480rpx;
+    height:60rpx;
+    line-height:60rpx;
+    border-radius:60rpx;
+    border:1rpx solid #ccc;
+}
+.search .tip-words{
+    font-size:26rpx;
+    color:#333;
+}
+.search-img{
+    width:30rpx;
+    height:30rpx;
+    margin-left:40rpx;
+    margin-right:20rpx;
+}

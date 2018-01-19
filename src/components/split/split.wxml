@@ -1,0 +1,5 @@
+<view class="split">
+  <view class="left-line"></view>
+  <view class="content">{{itemData.config.title}}</view>      
+  <view class="right-line"></view>      
+</view>
